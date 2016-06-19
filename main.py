@@ -6,7 +6,7 @@ from telegram import InlineQueryResultArticle, InlineQueryResultPhoto, ParseMode
     InputTextMessageContent
 from telegram.ext import Updater, InlineQueryHandler, CommandHandler
 import logging
-import urllib
+import urllib.request
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -14,6 +14,13 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
+
+def _send_img_from_url(bot, url):
+    img = urllib.request.urlopen('http://www.inkubio.fi/kiltiscam/kiltahuone.jpg').read()
+    f = open('out.jpg','wb')
+    f.write(img)
+    bot.sendPhoto(update.message.chat_id, photo=f)
+    f.close()
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
@@ -28,11 +35,11 @@ def help(bot, update):
 def stalk(bot, update):
 
     msg = update.message.text.lower()
+    print(update.message.text.lower())
     print("moi")
     if msg == '/stalk' or msg == '/stalk@kahmybot':
-        img = urllib.urlopen('http://www.inkubio.fi/kiltiscam/kiltahuone.jpg').read()
-        bot.sendMessage(update.message.chat_id, text='lol')
-        bot.sendPhoto(update.message.chat_id, photo=img)
+        _send_img_from_
+        #resp = multipart.post_multipart(BASE_URL + 'sendPhoto', [('chat_id', str(chat_id))], [('photo', 'image.jpg', img)])
 
 
 def inlinequery(bot, update):
@@ -70,6 +77,7 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("stalk", stalk))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(InlineQueryHandler(inlinequery))
