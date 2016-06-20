@@ -15,12 +15,13 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 
-def _send_img_from_url(bot, url):
-    img = urllib.request.urlopen('http://www.inkubio.fi/kiltiscam/kiltahuone.jpg').read()
-    f = open('out.jpg','wb')
-    f.write(img)
-    bot.sendPhoto(update.message.chat_id, photo=f)
-    f.close()
+def _get_img_from_url(url):
+    img = urllib.request.urlopen(url).read()
+    with open('out.jpg','wb') as f:
+        f.write(img)
+        i = open('out.jpg', 'rb')
+        return i
+        
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
@@ -35,10 +36,11 @@ def help(bot, update):
 def stalk(bot, update):
 
     msg = update.message.text.lower()
-    print(update.message.text.lower())
-    print("moi")
     if msg == '/stalk' or msg == '/stalk@kahmybot':
-        _send_img_from_
+        url = 'http://www.inkubio.fi/kiltiscam/kiltahuone.jpg'
+        img = _get_img_from_url(url)
+        bot.sendPhoto(update.message.chat_id, photo=img)
+        img.close()
         #resp = multipart.post_multipart(BASE_URL + 'sendPhoto', [('chat_id', str(chat_id))], [('photo', 'image.jpg', img)])
 
 
