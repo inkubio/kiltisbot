@@ -6,6 +6,7 @@ from telegram.ext import Updater, InlineQueryHandler, CommandHandler
 import logging
 import urllib.request
 import os
+import config
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
