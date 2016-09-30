@@ -75,7 +75,7 @@ def main():
 
     # https://kiltisbot.appspot.com/set_webhook?url=https://kiltisbot.appspot.com/webhook
 
-    updater = Updater(config.kiltistoken)
+    updater = Updater(config.kahmytoken)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
