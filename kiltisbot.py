@@ -72,6 +72,7 @@ def add_quote(bot, update):
     '/addquote'
     """
     if not update.message.reply_to_message:
+        print(update)
         bot.sendMessage(update.message.chat.id,
                         "Please use '/addquote' by replying to a message.",
                         reply_to_message_id=update.message.message_id)
@@ -79,11 +80,11 @@ def add_quote(bot, update):
 
     message = update.message
     reply = message.reply_to_message
-    quote = reply.text
+    quote = reply.text.lower()
     message_id = reply.message_id
     chat_id = reply.chat.id
-    said_by = reply.from_user.first_name + " " + reply.from_user.last_name
-    added_by = message.from_user.first_name + " " + message.from_user.last_name
+    said_by = reply.from_user.first_name.lower() + " " + reply.from_user.last_name.lower()
+    added_by = message.from_user.first_name.lower() + " " + message.from_user.last_name.lower()
     date_added = int(message.date.timestamp())
     date_said = int(reply.date.timestamp())
 
@@ -92,15 +93,114 @@ def add_quote(bot, update):
         c.execute("INSERT INTO quotes VALUES (?, ?, ?, ?, ?, ?, ?)",
             (quote, message_id, chat_id, said_by, added_by, date_said, date_added))
         conn.commit()
-        bot.sendMessage(chat_id, "Quote added!")
+        bot.sendMessage(chat_id, "Quote added.")
     except Exception as e:
         bot.sendMessage(chat_id, "Error adding quote:\n{}".format(e))
     finally:
         conn.close()
 
 
+def _search_msg_id(chat_id, args):
+    """
+    Fetches a random possible meaning of search term
+    (only text, first name and text or full name and text)
+    """
+    def like(string):
+        return "%{}%".format(string)
+
+    conn, c = _init_quote_db()
+    try:
+        if len(args) == 1:
+            ret = c.execute("""
+                            SELECT message_id
+                            FROM quotes
+                            WHERE chat_id=:id AND
+                                (said_by LIKE :name OR
+                                quote LIKE :text)
+                            ORDER BY RANDOM() LIMIT 1
+                            """,
+                            {"id": str(chat_id),
+                             "name": like(args[0]),
+                             "text": like(args[0])}
+                           ).fetchone()
+
+        elif len(args) == 2:
+            ret = c.execute("""
+                            SELECT message_id
+                            FROM quotes
+                            WHERE chat_id=:id AND
+                                (said_by LIKE :full OR
+                                (said_by LIKE :firstname AND quote LIKE :text) OR
+                                quote LIKE :full)
+                            ORDER BY RANDOM() LIMIT 1
+                            """,
+                            {"id": str(chat_id),
+                             "full": like(" ".join(args)),
+                             "firstname": like(args[0]),
+                             "text": like(args[1])}
+                           ).fetchone()
+
+        else:
+            ret = c.execute("""
+                            SELECT message_id
+                            FROM quotes
+                            WHERE chat_id=:id AND
+                                ((said_by LIKE :fullname AND quote LIKE :mintext) OR
+                                 (said_by LIKE :firstname AND quote LIKE :medtext) OR
+                                  quote LIKE :maxtext)
+                            ORDER BY RANDOM() LIMIT 1
+                            """,
+                            {"id": str(chat_id),
+                             "fullname": like(" ".join(args[:2])),
+                             "firstname": like(args[0]),
+                             "mintext": like(" ".join(args[2:])),
+                             "medtext": like(" ".join(args[1:])),
+                             "maxtext": like(" ".join(args))}
+                           ).fetchone()
+
+            #except:
+            #print("Vituiks män")
+    finally:
+        conn.close()
+
+    print("ret")
+    print(ret)
+    print("ret")
+    return ret[0] if ret else None
+
+
+def _random_msg_id(chat_id):
+    conn, c = _init_quote_db()
+    ret = None
+    try:
+        ret = c.execute("""
+                        SELECT message_id
+                        FROM quotes
+                        WHERE chat_id=?
+                        ORDER BY RANDOM() LIMIT 1
+                        """,
+                        (str(chat_id),)).fetchone()
+        #except:
+        #    print("voivittu")
+    finally:
+        conn.close()
+    return ret[0] if ret else None
+
+
 def get_quote(bot, update):
-    pass
+    msg = update.message.text.lower()
+    chat_id = update.message.chat.id
+
+    args = None if len(msg.split()) == 1 else msg.split()[1:]
+    if args:
+        msg_id = _search_msg_id(chat_id, args)
+    else:
+        msg_id = _random_msg_id(chat_id)
+
+    if msg_id:
+        bot.forwardMessage(chat_id=chat_id, from_chat_id=chat_id, message_id=msg_id)
+    else:
+        bot.sendMessage(chat_id, "Can't find a quote")
 
 
 # Experimental functionality, currently disabled
@@ -138,6 +238,7 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("stalk", stalk))
     dp.add_handler(CommandHandler("addquote", add_quote))
+    dp.add_handler(CommandHandler("quote", get_quote))
 
     # on noncommand i.e message - echo the message on Telegram
     # dp.add_handler(InlineQueryHandler(inlinequery))
