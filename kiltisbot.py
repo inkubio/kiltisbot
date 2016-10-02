@@ -138,6 +138,9 @@ def _search_msg_id(chat_id, args):
 
 
 def _random_msg_id(chat_id):
+    """
+    Returns a random quote from the same chat as the request
+    """
     conn, c = _init_quote_db()
     ret = None
     try:
@@ -148,14 +151,15 @@ def _random_msg_id(chat_id):
                         ORDER BY RANDOM() LIMIT 1
                         """,
                         (str(chat_id),)).fetchone()
-        #except:
-        #    print("voivittu")
     finally:
         conn.close()
     return ret[0] if ret else None
 
 
 def get_quote(bot, update):
+    """
+    Forwards a quote to a chat, searching for the quote if parametrized so
+    """
     msg = update.message.text.lower()
     chat_id = update.message.chat.id
 
@@ -168,7 +172,56 @@ def get_quote(bot, update):
     if msg_id:
         bot.forwardMessage(chat_id=chat_id, from_chat_id=chat_id, message_id=msg_id)
     else:
-        bot.sendMessage(chat_id, "Can't find a quote")
+        bot.sendMessage(chat_id, "Can't find a quote",
+                        reply_to_message_id=update.message.message_id)
+
+
+def list_quotes(bot, update):
+    """
+    Lists all quotes of a user to him in private chat
+    """
+    if update.message.chat.type != "private":
+        return
+    conn, c = _init_quote_db()
+    try:
+        ret = c.execute("""
+                        SELECT quote
+                        FROM quotes
+                        WHERE said_by = ?
+                        """,
+                        (update.message.chat.first_name.lower() + " " +
+                        update.message.chat.last_name.lower(),)).fetchall()
+        text = "\n".join([str(i+1) + ": " + t[0] for i, t in enumerate(ret)])
+        bot.sendMessage(update.message.chat.id, text)
+    finally:
+        conn.close()
+
+
+def delete_quote(bot, update):
+    """
+    Deletes a quote by same user requesting deletion
+    """
+    if update.message.chat.type != "private":
+        return
+    text = update.message.text.lower().split()
+    text = " ".join(text[1:])
+    conn, c = _init_quote_db()
+    try:
+        ret = c.execute("""
+                        DELETE FROM quotes
+                        WHERE said_by=?
+                        AND quote=?
+                        """,
+                        (update.message.chat.first_name.lower() + " " +
+                         update.message.chat.last_name.lower(),
+                         text)).fetchall()
+        conn.commit()
+        bot.sendMessage(update.message.chat.id, "Quote deleted.")
+    except:
+        bot.sendMessage(update.message.chat.id, "Couldn't delete quote:\n{}"
+                        .format(text))
+    finally:
+        conn.close()
 
 
 # Experimental functionality, currently disabled
@@ -207,6 +260,8 @@ def main():
     dp.add_handler(CommandHandler("stalk", stalk))
     dp.add_handler(CommandHandler("addquote", add_quote))
     dp.add_handler(CommandHandler("quote", get_quote))
+    dp.add_handler(CommandHandler("listquotes", list_quotes))
+    dp.add_handler(CommandHandler("deletequote", delete_quote))
 
     # on noncommand i.e message - echo the message on Telegram
     # dp.add_handler(InlineQueryHandler(inlinequery))
