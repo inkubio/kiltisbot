@@ -15,6 +15,7 @@ import os
 import config
 import sqlite3
 from datetime import datetime
+import random
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -109,64 +110,31 @@ def _search_msg_id(chat_id, args):
         return "%{}%".format(string)
 
     conn, c = _init_quote_db()
+    results = []
     try:
-        if len(args) == 1:
+        for arg in args:
             ret = c.execute("""
                             SELECT message_id
                             FROM quotes
-                            WHERE chat_id=:id AND
-                                (said_by LIKE :name OR
-                                quote LIKE :text)
-                            ORDER BY RANDOM() LIMIT 1
+                            WHERE chat_id=:id
+                            AND said_by LIKE :arg
                             """,
-                            {"id": str(chat_id),
-                             "name": like(args[0]),
-                             "text": like(args[0])}
-                           ).fetchone()
-
-        elif len(args) == 2:
-            ret = c.execute("""
+                            {"id": str(chat_id), "arg": like(arg)}
+                           ).fetchall()
+            ret += c.execute("""
                             SELECT message_id
                             FROM quotes
-                            WHERE chat_id=:id AND
-                                (said_by LIKE :full OR
-                                (said_by LIKE :firstname AND quote LIKE :text) OR
-                                quote LIKE :full)
-                            ORDER BY RANDOM() LIMIT 1
+                            WHERE chat_id=:id
+                            AND quote LIKE :arg
                             """,
-                            {"id": str(chat_id),
-                             "full": like(" ".join(args)),
-                             "firstname": like(args[0]),
-                             "text": like(args[1])}
-                           ).fetchone()
-
-        else:
-            ret = c.execute("""
-                            SELECT message_id
-                            FROM quotes
-                            WHERE chat_id=:id AND
-                                ((said_by LIKE :fullname AND quote LIKE :mintext) OR
-                                 (said_by LIKE :firstname AND quote LIKE :medtext) OR
-                                  quote LIKE :maxtext)
-                            ORDER BY RANDOM() LIMIT 1
-                            """,
-                            {"id": str(chat_id),
-                             "fullname": like(" ".join(args[:2])),
-                             "firstname": like(args[0]),
-                             "mintext": like(" ".join(args[2:])),
-                             "medtext": like(" ".join(args[1:])),
-                             "maxtext": like(" ".join(args))}
-                           ).fetchone()
-
-            #except:
-            #print("Vituiks män")
+                            {"id": str(chat_id), "arg": like(arg)}
+                           ).fetchall()
+            results.extend(ret)
     finally:
         conn.close()
 
-    print("ret")
-    print(ret)
-    print("ret")
-    return ret[0] if ret else None
+    id = random.choice(results)[0] if results else None
+    return id
 
 
 def _random_msg_id(chat_id):
