@@ -72,10 +72,9 @@ def add_quote(bot, update):
     User needs to reply to a message he wants to quote with the message
     '/addquote'
     """
-    if not update.message.reply_to_message:
-        print(update)
+    if not update.message.reply_to_message or not update.message.reply_to_message.text:
         bot.sendMessage(update.message.chat.id,
-                        "Please use '/addquote' by replying to a message.",
+                        "Please use '/addquote' by replying to a message.\nOnly add messages with text.",
                         reply_to_message_id=update.message.message_id)
         return
 
@@ -249,9 +248,28 @@ def main():
     # Create the Updater and pass it your bot's token.
     updater = Updater(config.kahmytoken)
 
-    # List for pending quote additions
-    global quote_queue
-    quote_queue = {}
+    # Check if quote database already exists
+    if not os.path.isfile('quote.db'):
+        print("Initializing database")
+        conn, c = _init_quote_db()
+        try:
+            c.execute("""
+                      CREATE TABLE quotes (
+                      quote TEXT NOT NULL,
+                      message_id INT NOT NULL,
+                      chat_id INT NOT NULL,
+                      said_by TEXT NOT NULL,
+                      added_by TEXT NOT NULL,
+                      date_said INT NOT NULL,
+                      date_added INT NOT NULL,
+                      PRIMARY KEY (message_id, chat_id));
+                      """)
+            conn.commit()
+            conn.close()
+        except:
+            print("Failed to initialize database!")
+            conn.close()
+            quit()
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
