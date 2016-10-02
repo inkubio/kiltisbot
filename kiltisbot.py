@@ -28,7 +28,7 @@ def _init_quote_db():
     Initializes database connection
     Returns cursor to interact with db
     """
-    connection = sqlite3.connect("quote.db")
+    connection = sqlite3.connect(config.quotedb)
     return connection, connection.cursor()
 
 '''
@@ -249,7 +249,7 @@ def main():
     updater = Updater(config.kahmytoken)
 
     # Check if quote database already exists
-    if not os.path.isfile('quote.db'):
+    if not os.path.isfile(config.quotedb):
         print("Initializing database")
         conn, c = _init_quote_db()
         try:
