@@ -31,29 +31,37 @@ def _init_quote_db():
     connection = sqlite3.connect(config.quotedb)
     return connection, connection.cursor()
 
-'''
-def _get_img_from_kiltiscam():
-    """
-    Grabs current kiltiscam image from server
-    """
-    cur_path = os.path.dirname(__file__)
-    img_path = os.path.relpath("../kiltiscam/kiltahuone.jpg")
-    f = open(img_path, "rb")
-    return f
+def _create_quote_db():
+    print("Initializing database...")
+    conn, c = _init_quote_db()
+    try:
+        c.execute("""
+                  CREATE TABLE quotes (
+                  quote TEXT NOT NULL,
+                  tags TEXT NOT NULL,
+                  message_id INT NOT NULL,
+                  chat_id INT NOT NULL,
+                  said_by TEXT NOT NULL,
+                  added_by TEXT NOT NULL,
+                  date_said INT NOT NULL,
+                  date_added INT NOT NULL,
+                  PRIMARY KEY (message_id, chat_id));
+                  """)
+        conn.commit()
+        conn.close()
+        print("Success.")
+    except:
+        print("Failed to initialize database!")
+        conn.close()
+        quit()
 
 
-def _get_img_from_url(url):
+def _get_message_args(string):
     """
-    Deprecated old function that grabs the image from
-    inkubio.fi/kiltiscam/kiltahuone.jpg
+    Returns all hashtags from input string separated with spaces as a string
     """
-    img = urllib.request.urlopen(url).read()
-    with open('out.jpg','wb') as f:
-        f.write(img)
-        i = open('out.jpg', 'rb')
-        return i
+    return " ".join([tag for tag in string.split() if tag[0] != '/'])
 
-'''
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 
@@ -72,15 +80,32 @@ def add_quote(bot, update):
     User needs to reply to a message he wants to quote with the message
     '/addquote'
     """
-    if not update.message.reply_to_message or not update.message.reply_to_message.text:
+
+    # Using command when not replying (unsupported functionality, current is enough)
+    if not update.message.reply_to_message:
         bot.sendMessage(update.message.chat.id,
-                        "Please use '/addquote' by replying to a message.\nOnly add messages with text.",
+                        "Please use '/addquote' by replying to a message.",
+                        reply_to_message_id=update.message.message_id)
+        return
+
+    # Using command and not replying to a text or a voice message (useless spam, don't want that)
+    if not update.message.reply_to_message.text and not update.message.reply_to_message.voice:
+        bot.sendMessage(update.message.chat.id,
+                        "Please only add text or voice quotes.",
+                        reply_to_message_id=update.message.message_id)
+        return
+
+    # Using command without tags on a voice message (can't search non-text entries in db)
+    if update.message.reply_to_message.voice and not _get_message_args(update.message.text):
+        bot.sendMessage(update.message.chat.id,
+                        "Please add search tags after '/addquote' for voice messages.",
                         reply_to_message_id=update.message.message_id)
         return
 
     message = update.message
     reply = message.reply_to_message
     quote = reply.text.lower()
+    tags = _get_message_args(message.text)
     message_id = reply.message_id
     chat_id = reply.chat.id
     said_by = reply.from_user.first_name.lower() + " " + reply.from_user.last_name.lower()
@@ -90,8 +115,8 @@ def add_quote(bot, update):
 
     conn, c = _init_quote_db()
     try:
-        c.execute("INSERT INTO quotes VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (quote, message_id, chat_id, said_by, added_by, date_said, date_added))
+        c.execute("INSERT INTO quotes VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (quote, tags, message_id, chat_id, said_by, added_by, date_said, date_added))
         conn.commit()
         bot.sendMessage(chat_id, "Quote added.")
     except Exception as e:
@@ -104,6 +129,7 @@ def _search_msg_id(chat_id, args):
     """
     Fetches a random possible meaning of search term
     (only text, first name and text or full name and text)
+    one arg at a time
     """
     def like(string):
         return "%{}%".format(string)
@@ -125,6 +151,14 @@ def _search_msg_id(chat_id, args):
                             FROM quotes
                             WHERE chat_id=:id
                             AND quote LIKE :arg
+                            """,
+                            {"id": str(chat_id), "arg": like(arg)}
+                           ).fetchall()
+            ret += c.execute("""
+                            SELECT message_id
+                            FROM quotes
+                            WHERE chat_id=:id
+                            AND tags LIKE :arg
                             """,
                             {"id": str(chat_id), "arg": like(arg)}
                            ).fetchall()
@@ -157,14 +191,18 @@ def _random_msg_id(chat_id):
 
 def get_quote(bot, update):
     """
-    Forwards a quote to a chat, searching for the quote if parametrized so
+    Forwards a quote to a chat.
+    If there are words after '/quote', these are considered
+    search arguments and are used for limiting the search and
+    identifying quotes from the db based on the quotee, text
+    in quote or tags.
     """
     msg = update.message.text.lower()
     chat_id = update.message.chat.id
 
-    args = None if len(msg.split()) == 1 else msg.split()[1:]
-    if args:
-        msg_id = _search_msg_id(chat_id, args)
+    arglist = _get_message_args(update.message.text).split()
+    if arglist:
+        msg_id = _search_msg_id(chat_id, arglist)
     else:
         msg_id = _random_msg_id(chat_id)
 
@@ -184,13 +222,16 @@ def list_quotes(bot, update):
     conn, c = _init_quote_db()
     try:
         ret = c.execute("""
-                        SELECT quote
+                        SELECT quote, tags, message_id
                         FROM quotes
                         WHERE said_by = ?
                         """,
                         (update.message.chat.first_name.lower() + " " +
                         update.message.chat.last_name.lower(),)).fetchall()
-        text = "\n".join([str(i+1) + ": " + t[0] for i, t in enumerate(ret)])
+
+        text = "\n\n".join([str(i+1) + ":\nQuote: " + (t[0] if t[0] else "VoiceMessage") + \
+                            "\nTags: " + (t[1] if t[1] else "None") + \
+                            "\nID: " + str(t[2]) for i, t in enumerate(ret)])
         bot.sendMessage(update.message.chat.id, text)
     finally:
         conn.close()
@@ -209,7 +250,7 @@ def delete_quote(bot, update):
         ret = c.execute("""
                         DELETE FROM quotes
                         WHERE said_by=?
-                        AND quote=?
+                        AND message_id=?
                         """,
                         (update.message.chat.first_name.lower() + " " +
                          update.message.chat.last_name.lower(),
@@ -223,56 +264,17 @@ def delete_quote(bot, update):
         conn.close()
 
 
-# Experimental functionality, currently disabled
-"""
-def inlinequery(bot, update):
-    query = update.inline_query.query
-    results = []
-
-    results.append(InlineQueryResultPhoto(id=uuid4(),
-                                            photo_url="http://www.inkubio.fi/kiltiscam/kiltahuone.jpg",
-                                            thumb_url="http://www.inkubio.fi/kiltiscam/kiltahuone.jpg"))
-
-    results.append(InlineQueryResultPhoto(id=uuid4(),
-                                            photo_url="http://ruutu.hut.fi/pics/30-Jonotilanne.jpg",
-                                            thumb_url="http://ruutu.hut.fi/pics/30-Jonotilanne.jpg"))
-
-    bot.answerInlineQuery(update.inline_query.id, results=results)
-"""
 
 def error(bot, update, error):
     logger.warn('Update "%s" caused error "%s"' % (update, error))
 
 
 def main():
-    # Create the Updater and pass it your bot's token.
-    updater = Updater(config.kahmytoken)
-
-    # Check if quote database already exists
     if not os.path.isfile(config.quotedb):
-        print("Initializing database")
-        conn, c = _init_quote_db()
-        try:
-            c.execute("""
-                      CREATE TABLE quotes (
-                      quote TEXT NOT NULL,
-                      message_id INT NOT NULL,
-                      chat_id INT NOT NULL,
-                      said_by TEXT NOT NULL,
-                      added_by TEXT NOT NULL,
-                      date_said INT NOT NULL,
-                      date_added INT NOT NULL,
-                      PRIMARY KEY (message_id, chat_id));
-                      """)
-            conn.commit()
-            conn.close()
-        except:
-            print("Failed to initialize database!")
-            conn.close()
-            quit()
+        _create_quote_db()
 
-    # Get the dispatcher to register handlers
-    dp = updater.dispatcher
+    updater = Updater(config.kahmytoken)  # Create the Updater and pass it your bot's token.
+    dp = updater.dispatcher  # Get the dispatcher to register handlers
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("stalk", stalk))
@@ -280,14 +282,9 @@ def main():
     dp.add_handler(CommandHandler("quote", get_quote))
     dp.add_handler(CommandHandler("listquotes", list_quotes))
     dp.add_handler(CommandHandler("deletequote", delete_quote))
-
-    # on noncommand i.e message - echo the message on Telegram
-    # dp.add_handler(InlineQueryHandler(inlinequery))
-
     dp.add_error_handler(error)
 
-    # Start the Bot
-    updater.start_polling()
+    updater.start_polling()  # Start the Bot
 
     # Block until the user presses Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
