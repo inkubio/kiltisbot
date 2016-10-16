@@ -65,6 +65,17 @@ def _get_message_args(string):
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 
+
+def _get_img_from_kiltiscam():
+    """
+    Grabs current kiltiscam image from server
+    """
+    cur_path = os.path.dirname(__file__)
+    img_path = os.path.relpath("../kiltiscam/kiltahuone.jpg")
+    f = open(img_path, "rb")
+    return f
+
+
 def stalk(bot, update):
     """
     Command to post current kiltiscam image
@@ -273,7 +284,7 @@ def main():
     if not os.path.isfile(config.quotedb):
         _create_quote_db()
 
-    updater = Updater(config.kahmytoken)  # Create the Updater and pass it your bot's token.
+    updater = Updater(config.kiltistoken)  # Create the Updater and pass it your bot's token.
     dp = updater.dispatcher  # Get the dispatcher to register handlers
 
     # on different commands - answer in Telegram
