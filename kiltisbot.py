@@ -119,7 +119,10 @@ def add_quote(bot, update):
     tags = _get_message_args(message.text)
     message_id = reply.message_id
     chat_id = reply.chat.id
-    said_by = reply.from_user.first_name.lower() + " " + reply.from_user.last_name.lower()
+    if reply.forward_from:
+        said_by = reply.forward_from.first_name.lower() + " " + reply.forward_from.last_name.lower()
+    else:
+        said_by = reply.from_user.first_name.lower() + " " + reply.from_user.last_name.lower()
     added_by = message.from_user.first_name.lower() + " " + message.from_user.last_name.lower()
     date_added = int(message.date.timestamp())
     date_said = int(reply.date.timestamp())
@@ -280,6 +283,13 @@ def error(bot, update, error):
     logger.warn('Update "%s" caused error "%s"' % (update, error))
 
 
+def echo(bot, update):
+    """
+    Debugging print function
+    """
+    print(update)
+
+
 def main():
     if not os.path.isfile(config.quotedb):
         _create_quote_db()
@@ -293,6 +303,7 @@ def main():
     dp.add_handler(CommandHandler("quote", get_quote))
     dp.add_handler(CommandHandler("listquotes", list_quotes))
     dp.add_handler(CommandHandler("deletequote", delete_quote))
+    # dp.add_handler(MessageHandler("", echo))  # Debug printing
     dp.add_error_handler(error)
 
     updater.start_polling()  # Start the Bot
