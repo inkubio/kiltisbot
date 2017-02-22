@@ -31,6 +31,7 @@ def _init_quote_db():
     connection = sqlite3.connect(config.quotedb)
     return connection, connection.cursor()
 
+
 def _create_quote_db():
     print("Initializing database...")
     conn, c = _init_quote_db()
@@ -130,7 +131,7 @@ def add_quote(bot, update):
     conn, c = _init_quote_db()
     try:
         c.execute("INSERT INTO quotes VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (quote, tags, message_id, chat_id, said_by, added_by, date_said, date_added))
+                  (quote, tags, message_id, chat_id, said_by, added_by, date_said, date_added))
         conn.commit()
         bot.sendMessage(chat_id, "Quote added.")
     except Exception as e:
@@ -159,23 +160,23 @@ def _search_msg_id(chat_id, args):
                             AND said_by LIKE :arg
                             """,
                             {"id": str(chat_id), "arg": like(arg)}
-                           ).fetchall()
+                            ).fetchall()
             ret += c.execute("""
-                            SELECT message_id
-                            FROM quotes
-                            WHERE chat_id=:id
-                            AND quote LIKE :arg
-                            """,
-                            {"id": str(chat_id), "arg": like(arg)}
-                           ).fetchall()
+                             SELECT message_id
+                             FROM quotes
+                             WHERE chat_id=:id
+                             AND quote LIKE :arg
+                             """,
+                             {"id": str(chat_id), "arg": like(arg)}
+                             ).fetchall()
             ret += c.execute("""
-                            SELECT message_id
-                            FROM quotes
-                            WHERE chat_id=:id
-                            AND tags LIKE :arg
-                            """,
-                            {"id": str(chat_id), "arg": like(arg)}
-                           ).fetchall()
+                             SELECT message_id
+                             FROM quotes
+                             WHERE chat_id=:id
+                             AND tags LIKE :arg
+                             """,
+                             {"id": str(chat_id), "arg": like(arg)}
+                             ).fetchall()
             results.extend(ret)
     finally:
         conn.close()
@@ -241,10 +242,10 @@ def list_quotes(bot, update):
                         WHERE said_by = ?
                         """,
                         (update.message.chat.first_name.lower() + " " +
-                        update.message.chat.last_name.lower(),)).fetchall()
+                         update.message.chat.last_name.lower(),)).fetchall()
 
-        text = "\n\n".join([str(i+1) + ":\nQuote: " + (t[0] if t[0] else "VoiceMessage") + \
-                            "\nTags: " + (t[1] if t[1] else "None") + \
+        text = "\n\n".join([str(i + 1) + ":\nQuote: " + (t[0] if t[0] else "VoiceMessage") +
+                            "\nTags: " + (t[1] if t[1] else "None") +
                             "\nID: " + str(t[2]) for i, t in enumerate(ret)])
         bot.sendMessage(update.message.chat.id, text)
     finally:
@@ -276,7 +277,6 @@ def delete_quote(bot, update):
                         .format(text))
     finally:
         conn.close()
-
 
 
 def error(bot, update, error):
