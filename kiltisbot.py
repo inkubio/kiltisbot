@@ -71,7 +71,7 @@ def _get_img_from_kiltiscam():
     Grabs current kiltiscam image from server
     """
     cur_path = os.path.dirname(__file__)
-    img_path = os.path.relpath("../kiltiscam/kiltahuone.jpg")
+    img_path = os.path.relpath("../../projektit/kiltiscam/kiltahuone.jpg")
     f = open(img_path, "rb")
     return f
 
