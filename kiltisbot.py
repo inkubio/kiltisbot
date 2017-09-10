@@ -296,6 +296,7 @@ def add_joke(bot, update):
                             reply_to_message_id=message.message_id)
         return
 
+    chat_id = message.chat.id
     date_added = int(message.date.timestamp())
     said_by = message.from_user.first_name.lower() + " " + message.from_user.last_name.lower()
 
