@@ -23,31 +23,20 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 
-def _init_quote_db():
+def _init_db(database):
     """
     Initializes database connection
     Returns cursor to interact with db
     """
-    connection = sqlite3.connect(config.quotedb)
+    connection = sqlite3.connect(database)
     return connection, connection.cursor()
 
 
-def _create_quote_db():
+def _create_db(database, init_query):
     print("Initializing database...")
-    conn, c = _init_quote_db()
+    conn, c = _init_db(database)
     try:
-        c.execute("""
-                  CREATE TABLE quotes (
-                  quote TEXT NOT NULL,
-                  tags TEXT NOT NULL,
-                  message_id INT NOT NULL,
-                  chat_id INT NOT NULL,
-                  said_by TEXT NOT NULL,
-                  added_by TEXT NOT NULL,
-                  date_said INT NOT NULL,
-                  date_added INT NOT NULL,
-                  PRIMARY KEY (message_id, chat_id));
-                  """)
+        c.execute(init_query)
         conn.commit()
         conn.close()
         print("Success.")
@@ -59,7 +48,7 @@ def _create_quote_db():
 
 def _get_message_args(string):
     """
-    Returns all hashtags from input string separated with spaces as a string
+    Returns all args from input string separated with spaces as a string
     """
     return " ".join([tag for tag in string.split() if tag[0] != '/'])
 
@@ -128,7 +117,7 @@ def add_quote(bot, update):
     date_added = int(message.date.timestamp())
     date_said = int(reply.date.timestamp())
 
-    conn, c = _init_quote_db()
+    conn, c = _init_db(config.quotedb)
     try:
         c.execute("INSERT INTO quotes VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                   (quote, tags, message_id, chat_id, said_by, added_by, date_said, date_added))
@@ -149,7 +138,7 @@ def _search_msg_id(chat_id, args):
     def like(string):
         return "%{}%".format(string)
 
-    conn, c = _init_quote_db()
+    conn, c = _init_db(config.quotedb)
     results = []
     try:
         for arg in args:
@@ -189,7 +178,7 @@ def _random_msg_id(chat_id):
     """
     Returns a random quote from the same chat as the request
     """
-    conn, c = _init_quote_db()
+    conn, c = _init_db(config.quotedb)
     ret = None
     try:
         ret = c.execute("""
@@ -234,7 +223,7 @@ def list_quotes(bot, update):
     """
     if update.message.chat.type != "private":
         return
-    conn, c = _init_quote_db()
+    conn, c = _init_db(config.quotedb)
     try:
         ret = c.execute("""
                         SELECT quote, tags, message_id
@@ -260,7 +249,7 @@ def delete_quote(bot, update):
         return
     text = update.message.text.lower().split()
     text = " ".join(text[1:])
-    conn, c = _init_quote_db()
+    conn, c = _init_db(config.quotedb)
     try:
         ret = c.execute("""
                         DELETE FROM quotes
@@ -292,7 +281,9 @@ def echo(bot, update):
 
 def main():
     if not os.path.isfile(config.quotedb):
-        _create_quote_db()
+        _create_db(config.quotedb, config.init_quote_db)
+    if not os.path.isfile(config.jokedb):
+        _create_db(config.jokedb, config.init_joke_db)
 
     updater = Updater(config.kiltistoken)  # Create the Updater and pass it your bot's token.
     dp = updater.dispatcher  # Get the dispatcher to register handlers
