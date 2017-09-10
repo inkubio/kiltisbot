@@ -327,7 +327,7 @@ def _search_joke(args):
     results = []
     try:
         for arg in args:
-            ret += c.execute("""
+            ret = c.execute("""
                              SELECT joke
                              FROM jokes
                              WHERE joke LIKE :arg
