@@ -288,7 +288,7 @@ def add_joke(bot, update):
         tags = _get_message_args(message.text)
 
     else:  # Not a reply
-        joke = " ".join(_get_message_args(message.text))
+        joke = _get_message_args(message.text)
         tags = ""
         if not joke:
             bot.sendMessage(message.chat.id,
