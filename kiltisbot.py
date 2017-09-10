@@ -302,7 +302,7 @@ def add_joke(bot, update):
 
     conn, c = _init_db(config.jokedb)
     try:
-        c.execute("INSERT INTO jokess VALUES (?, ?, ?)",
+        c.execute("INSERT INTO jokes VALUES (?, ?, ?)",
                   (joke, tags, date_added))
         conn.commit()
         if said_by == "roope vesterinen" or said_by == "eero linna":
