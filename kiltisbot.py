@@ -383,7 +383,7 @@ def get_joke(bot, update):
         joke = _random_joke()
 
     if joke:
-        bot.sendMessage(chat_id=chat_id, joke)
+        bot.sendMessage(chat_id, joke)
     else:
         bot.sendMessage(chat_id, "Not enough puuta.",
                         reply_to_message_id=update.message.message_id)
