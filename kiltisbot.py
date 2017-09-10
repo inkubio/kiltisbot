@@ -294,7 +294,7 @@ def add_joke(bot, update):
             bot.sendMessage(message.chat.id,
                             "Please use '/lisaapuuta' by replying to a message or with a joke as an argument.",
                             reply_to_message_id=message.message_id)
-        return
+            return
 
     chat_id = message.chat.id
     date_added = int(message.date.timestamp())
