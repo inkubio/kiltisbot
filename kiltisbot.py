@@ -124,7 +124,10 @@ def add_quote(bot, update):
         conn.commit()
         bot.sendMessage(chat_id, "Quote added.")
     except Exception as e:
-        bot.sendMessage(chat_id, "Error adding quote:\n{}".format(e))
+        if str(e).startswith("UNIQUE constraint failed"):
+            bot.sendMessage(chat_id, "Error adding quote:\nMessage already added!")
+        else:
+            bot.sendMessage(chat_id, "Error adding quote:\n{}".format(e))
     finally:
         conn.close()
 
