@@ -16,6 +16,7 @@ import config
 import sqlite3
 from datetime import datetime
 import random
+import requests
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -55,6 +56,20 @@ def _get_message_args(string):
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
 
+
+def _get_now_playing():
+    url = 'https://www.inkubio.fi/kiltiscam/spotify_data.JSON'
+    data = requests.get(url).json()
+
+    return data
+
+def robin(bot, update):
+
+    songs = _get_now_playing()
+    if songs['status'] == 'Playing':
+        bot.sendMessage(update.message.chat.id, 'Now playing {} by {}'.format(songs['songs'][0]['name'], songs['songs'][0]['artist']))
+    else:
+        bot.sendMessage(update.message.chat.id, 'Nothing seems to be playing.\n')
 
 def _get_img_from_kiltiscam():
     """
@@ -421,6 +436,7 @@ def main():
     dp.add_handler(CommandHandler("deletequote", delete_quote))
     dp.add_handler(CommandHandler("puuta", get_joke))
     dp.add_handler(CommandHandler("lisaapuuta", add_joke))
+    dp.add_handler(CommandHandler("robin", robin))
     # dp.add_handler(MessageHandler("", echo))  # Debug printing
     dp.add_error_handler(error)
 
