@@ -1,6 +1,6 @@
 # kiltisbot
 
-Telegram bot to fetch an image of the guildroom of Inkubio and post it to a chat
+Telegram bot to fetch an image of the guildroom of Inkubio and post it to a chat. Also supports innovative spam via quotes and puns.
 
 Depends on a python telegram bot wrapper: https://github.com/python-telegram-bot/python-telegram-bot
 
