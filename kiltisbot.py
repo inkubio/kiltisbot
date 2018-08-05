@@ -124,11 +124,21 @@ def add_quote(bot, update):
     tags = _get_message_args(message.text)
     message_id = reply.message_id
     chat_id = reply.chat.id
+
     if reply.forward_from:
-        said_by = reply.forward_from.first_name.lower() + " " + reply.forward_from.last_name.lower()
+        reply_first_name = reply.forward_from.first_name
+        reply_last_name = reply.forward_from.last_name
+        reply_name = reply_first_name.lower() + (" " + reply_last_name.lower() if reply_last_name else "")
     else:
-        said_by = reply.from_user.first_name.lower() + " " + reply.from_user.last_name.lower()
-    added_by = message.from_user.first_name.lower() + " " + message.from_user.last_name.lower()
+        reply_first_name = reply.from_user.first_name
+        reply_last_name = reply.from_user.last_name
+        reply_name = reply_first_name.lower() + (" " + reply_last_name.lower() if reply_last_name else "")
+    message_first_name = message.from_user.first_name
+    message_last_name = message.from_user.last_name
+    message_name = message_first_name.lower() + (" " + message_last_name.lower() if message_last_name else "")
+
+    said_by = reply_name
+    added_by = message_name
     date_added = int(message.date.timestamp())
     date_said = int(reply.date.timestamp())
 
