@@ -149,7 +149,13 @@ def add_quote(bot, update):
         conn.commit()
         bot.sendMessage(chat_id, "Quote added.")
     except Exception as e:
-        if str(e).startswith("UNIQUE constraint failed"):
+        if str(e).startswith("UNIQUE constraint failed") and _get_message_args(update.message.text):
+            old_tags = c.execute("SELECT tags FROM quotes WHERE message_id = ?", (str(message_id),)).fetchone()
+            new_tags = " ".join(list(set(old_tags[0].split() + tags.split())))
+            c.execute("UPDATE quotes SET tags = ? WHERE message_id = ?", (new_tags, str(message_id)))
+            conn.commit()
+            bot.sendMessage(chat_id, "Message already added! Tags updated.")
+        elif str(e).startswith("UNIQUE constraint failed"):
             bot.sendMessage(chat_id, "Error adding quote:\nMessage already added!")
         else:
             bot.sendMessage(chat_id, "Error adding quote:\n{}".format(e))
