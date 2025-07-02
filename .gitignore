@@ -3,3 +3,9 @@ nohup.out
 out.jpg
 config.py
 quote.db
+
+*.pyc
+*.pyo
+.env
+*.env
+*.db

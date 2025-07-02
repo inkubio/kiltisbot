@@ -6,6 +6,11 @@ Questions or suggestions to
 Aaro Kuusinen
 TG: @apeoskari
 email: kuusinen.aaro@gmail.com
+
+Coffee related questions to:
+Oskari Niemi
+TG: @oskarikalervo
+email: okkixi@gmail.com
 """
 
 import logging
@@ -22,6 +27,8 @@ import os
 from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 from spotipy.oauth2 import SpotifyOAuth
+import time
+import socket
 
 
 # Enable logging.
@@ -298,6 +305,17 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     await update.message.reply_text("Adding joke")
 
+async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Returns the current coffee level in the guildroom.
+    """
+    try:
+        with open(config.coffeefile, "r") as f:
+        level = f.readline().strip()
+        await update.message.reply_text(f"Current coffee level:\n{level}")
+    except FileNotFoundError:
+        await update.message.reply_text("No coffee level data available.")
+    
 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
