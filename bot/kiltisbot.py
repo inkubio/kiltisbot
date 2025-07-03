@@ -19,7 +19,6 @@ from typing import List
 
 import config
 import spotipy
-import plot_data
 import coffee_analysis
 import requests
 import os
@@ -186,6 +185,7 @@ async def get_plot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     Draws and returns a plot of the climate data from the guildroom.
     Showing the last 24h by default but can be adjusted manually.
     """
+    import plot_data
     plot_data.plotting()
     pic = open("./plots/newest.png", "rb")
     await update.get_bot().sendPhoto(update.message.chat_id, photo=pic)

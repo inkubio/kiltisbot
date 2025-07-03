@@ -38,7 +38,7 @@ async def get_coffee_analysis():
             resp = await client.post("http://localhost:6000")
             resp.raise_for_status()
             content = resp.content
-     except httpx.RequestError as e:
+    except httpx.RequestError as e:
         raise RuntimeError(f"Could not fetch coffee image: {e}")
 
     image = Image.open(io.BytesIO(content))

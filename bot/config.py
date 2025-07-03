@@ -17,5 +17,5 @@ init_quote_db = "CREATE TABLE IF NOT EXISTS quotes (quote_text TEXT, tags TEXT, 
 jokedb = "joke.db"
 init_joke_db = "CREATE TABLE IF NOT EXISTS jokes"
 climatedb = "climate.db"
-init_climate_db = "CREATE TABLE IF NOT EXISTS climate_data (id INTEGER PRIMARY KEY AUTOINCREMENT, temperature REAL, humidity REAL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)"
+init_climate_db = "CREATE TABLE IF NOT EXISTS climate_data (id INTEGER PRIMARY KEY AUTOINCREMENT, co2 REAL, temperature REAL, humidity REAL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)"
 
