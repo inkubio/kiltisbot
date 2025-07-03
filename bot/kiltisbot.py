@@ -20,6 +20,7 @@ from typing import List
 import config
 import spotipy
 import plot_data
+import get_kahvi
 import requests
 import os
 
