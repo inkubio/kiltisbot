@@ -2,6 +2,7 @@
 
 import glob
 import os.path
+import sqlite3
 from datetime import datetime, timedelta
 import pytz
 import pandas as pd
