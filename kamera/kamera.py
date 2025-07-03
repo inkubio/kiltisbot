@@ -1,29 +1,33 @@
-import requests
-import time
-from picamera import PiCamera
-import io
+from flask import Flask, send_file
+from io import BytesIO
+import subprocess
 
-API_URL = "http://<AZURE_VM_IP>:5000/upload_image"
-API_KEY = "your_api_key_here"
+#Vaatii POST tunnelin  ssh -i azure -N -R 6000:localhost:7000 azureuser@40.127.166.0
 
-def capture_and_send():
-    camera = PiCamera()
-    camera.resolution = (640, 480)  # Matalaresoluutio
+def take_photo():
+        filename = "/home/oskar/photo.jpg"
+        cmd = ["raspistill", "-o", filename, "-t", "5", "-n"]
+        subprocess.run(cmd, check=True)
 
-    stream = io.BytesIO()
-    camera.capture(stream, format='jpeg')
-    stream.seek(0)
+        with open(filename, "rb") as f:
+                img_bytes  = f.read()
 
-    headers = {"Authorization": f"Bearer {API_KEY}"}
-    files = {'image': ('image.jpg', stream, 'image/jpeg')}
+        return img_bytes
 
-    try:
-        response = requests.post(API_URL, headers=headers, files=files)
-        print(f"Response from server: {response.json()}")
-    except Exception as e:
-        print(f"Error sending image: {e}")
+app = Flask(__name__)
 
-if __name__ == '__main__':
-    while True:
-        capture_and_send()
-        time.sleep(60)  # Kuva joka minuutti
+@app.route('/', methods=['POST'])
+def send_image():
+        print("POST-pyyntö vastaanotettu")
+
+        img_bytes = take_photo()
+
+        return send_file(
+                BytesIO(img_bytes),
+                mimetype="image/jpeg",
+                as_attachment=False,
+                download_name="photo.jpg"
+        )
+
+if __name__ == "__main__":
+        app.run(host="0.0.0.0", port=7000)
