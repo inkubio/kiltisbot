@@ -51,16 +51,19 @@ def _init_db(database):
 
 def _create_db(database, init_query):
     print("Initializing database...")
-    conn, c = _init_db(database)
+    conn = sqlite3.connect(database)
+    c = conn.cursor()
     try:
-        c.execute(init_query)
+        c.executescript(init_query)
         conn.commit()
         conn.close()
         print("Success.")
-    finally:
-        print("Failed to initialize database!")
+    except Exception as e:
+        print(f"Failed to initialize database: {e}")
         conn.close()
         quit()
+    else:
+        conn.close()
 
 
 def _get_message_args(string):
@@ -340,7 +343,7 @@ def main() -> None:
     if not os.path.isfile(config.jokedb):
         _create_db(config.jokedb, config.init_joke_db)
     if not os.path.isfile(config.climatedb):
-        _create_db(config.climatedb, config.climate_joke_db)
+        _create_db(config.climatedb, config.init_climate_db)
 
     # Create the Application and pass it your bot's token (found int the config-file)
     application = Application.builder().token(config.kiltistoken).build()
