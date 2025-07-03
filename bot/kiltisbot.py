@@ -20,7 +20,7 @@ from typing import List
 import config
 import spotipy
 import plot_data
-import get_kahvi
+import coffee_analysis
 import requests
 import os
 
@@ -118,22 +118,22 @@ async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 def _get_climate_data():
-    """
-    Retrieving the latest measurement of the climate at the guildroom.
-    The file which it can be found has been defined in config.py.
-    """
-    measurements = []
     try:
-        with open(config.climatefile, "r") as f:
-            for i in range(3):
-                meas = f.readline()
-                measurements.append(meas[:-1])  # removing trailing \n
-        measurements[0] = float(measurements[0])    # temperature
-        measurements[1] = int(measurements[1])      # co2
-        measurements[2] = float(measurements[2])    # humidity
-    except FileNotFoundError:
-        measurements = [0,0,0]
-    return measurements
+        conn = sqlite3.connect("climate.db")
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT temperature, co2, humidity FROM climate_data ORDER BY timestamp DESC LIMIT 1"
+        )
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            # row = (temp, co2, humidity)
+            return [float(row[0]), int(row[1]), float(row[2])]
+        else:
+            return [0, 0, 0]
+    except Exception as e:
+        print("DB error:", e)
+        return [0, 0, 0]
 
 
 def _get_ppl():
@@ -311,11 +311,10 @@ async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     Returns the current coffee level in the guildroom.
     """
     try:
-        with open(config.coffeefile, "r") as f:
-            level = f.readline().strip()
-        await update.message.reply_text(f"Current coffee level:\n{level}")
-    except FileNotFoundError:
-        await update.message.reply_text("No coffee level data available.")
+        result = coffee_analysis.get_coffee_analysis()
+        await update.message.reply_text(f"Coffee level (dark pixels): {result}")
+    except Exception as e:
+        await update.message.reply_text(f"Error fetching or analyzing coffee image: {e}")
     
 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -340,6 +339,8 @@ def main() -> None:
         _create_db(config.quotedb, config.init_quote_db)
     if not os.path.isfile(config.jokedb):
         _create_db(config.jokedb, config.init_joke_db)
+    if not os.path.isfile(config.climatedb):
+        _create_db(config.climatedb, config.climate_joke_db)
 
     # Create the Application and pass it your bot's token (found int the config-file)
     application = Application.builder().token(config.kiltistoken).build()
@@ -356,6 +357,7 @@ def main() -> None:
     application.add_handler(CommandHandler("deletequote", delete_quote))
     application.add_handler(CommandHandler("joke", joke))
     application.add_handler(CommandHandler("addjoke", add_joke))
+    application.add_handler(CommandHandler("coffee", get_coffee))
 
     # For debugging
     # application.add_handler(CommandHandler("echo", echo))

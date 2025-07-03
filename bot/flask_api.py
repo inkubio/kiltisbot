@@ -2,13 +2,11 @@ import os
 from flask import Flask, request, jsonify
 from datetime import datetime
 from utils import save_image, get_latest_image_path, image_is_recent, analyze_coffee
+import config
 
-last_analysis = {"timestamp": None, "result": None}
 
 app = Flask(__name__)
 
-# Haetaan API avain
-API_KEY = os.getenv("API_KEY")
 
 @app.route('/upload_sensor', methods=['POST'])
 def upload_sensor():
@@ -23,8 +21,21 @@ def upload_sensor():
     if not data:
         return jsonify({"error": "No JSON data"}), 400
 
-    # Tallennus tietokantaan tai tiedostoon voisi tapahtua tässä.
-    print(f"Sensor data received: {data}")
+    temp = data.get('temperature')
+    humidity = data.get('humidity')
+    if temp is None or humidity is None:
+        return jsonify({"error": "Missing temperature or humidity data"}), 400
+
+    try:
+        temp = float(temp)
+        humidity = float(humidity)
+    except ValueError:
+        return jsonify({"error": "Invalid temperature or humidity value"}), 400
+
+    # Tallennus tietokantaan
+    save_climate_data(temp, humidity)
+
+    print(f"Sensor data received: Temp={temp}, Humidity={humidity}")
 
     return jsonify({"status": "Sensori data vastaanotettu."})
 
