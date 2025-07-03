@@ -1,7 +1,9 @@
 import os
 from flask import Flask, request, jsonify
 from datetime import datetime
-from utils import save_image, get_latest_image_path, image_is_recent
+from utils import save_image, get_latest_image_path, image_is_recent, analyze_coffee
+
+last_analysis = {"timestamp": None, "result": None}
 
 app = Flask(__name__)
 
@@ -40,7 +42,7 @@ def get_latest_analysis():
     if not age_ok:
         try:
             # Pyydä kuva raspberrylta
-            resp = requests.post("http://raspberry.local:8000/get_image")
+            resp = requests.post("http://localhost:6000")
             if resp.status_code != 200:
                 raise Exception("Raspberry image request failed")
 
@@ -48,7 +50,7 @@ def get_latest_analysis():
             image = Image.open(image_bytes)
 
             # Tee analyysi
-            result = "2 cups" #analyze_coffee(image)
+            result = result = analyze_coffee(image)
             last_analysis["timestamp"] = now
             last_analysis["result"] = result
 

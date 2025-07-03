@@ -22,3 +22,10 @@ def image_is_recent(directory, minutes=5):
         return False
     mtime = datetime.fromtimestamp(os.path.getmtime(filepath))
     return datetime.now() - mtime < timedelta(minutes=minutes)
+
+def analyze_coffee(image):
+    gray = image.convert("L")  # Muutetaan harmaasävykuvaksi
+    pixels = list(gray.getdata())
+    threshold = 50  # mikä on tumma pikseli
+    dark_pixels = sum(1 for p in pixels if p < threshold)
+    return f"{dark_pixels}"

@@ -311,7 +311,7 @@ async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     """
     try:
         with open(config.coffeefile, "r") as f:
-        level = f.readline().strip()
+            level = f.readline().strip()
         await update.message.reply_text(f"Current coffee level:\n{level}")
     except FileNotFoundError:
         await update.message.reply_text("No coffee level data available.")
