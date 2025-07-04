@@ -22,6 +22,7 @@ import spotipy
 import coffee_analysis
 import requests
 import os
+import random
 
 
 from telegram import ForceReply, Update
@@ -233,9 +234,7 @@ async def guild_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     Humidity: 29.6 %
     People: ~9
     """
-    co = _get_climate_data()[1]
-    temp = _get_climate_data()[0]
-    hum = _get_climate_data()[2]
+    temp, co, hum = _get_climate_data()[1]
     await update.message.reply_text("CO2: {}ppm\n"
                                     "Temperature: {}°C\n"
                                     "Humidity: {}%\n"
@@ -266,7 +265,7 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Please use '/addquote' by replying to a message.")
 
     # Using command and not replying to a text or a voice message (useless spam, don't want that)
-    if not update.message.reply_to_message.text and not context.message.reply_to_message.voice:
+    if not update.message.reply_to_message.text and not update.message.reply_to_message.voice:
         await update.message.reply_text("Please only add text or voice quotes.")
 
     # Using command without tags on a voice message (can't search non-text entries in db)
@@ -288,7 +287,7 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if reply.from_user:
         reply_first_name = reply.from_user.first_name
-        reply_last_name = reply.from_user.last_name
+        last_name = reply.from_user.last_name or ""
         added_by = reply_first_name.lower() + (" " + reply_last_name.lower() if reply_last_name else "")
     else:
         reply_first_name = reply.from_user.first_name
@@ -296,7 +295,7 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         added_by = reply_first_name.lower() + (" " + reply_last_name.lower() if reply_last_name else "")
 
     message_first_name = message.from_user.first_name
-    message_last_name = message.from_user.last_name
+    message_last_name = message.from_user.last_name or ""
     said_by = message_first_name.lower() + (" " + message_last_name.lower() if message_last_name else "")
     print(added_by)
     print(said_by)
@@ -347,7 +346,7 @@ async def get_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if msg_id:
         await context.bot.forwardMessage(chat_id=chat_id, from_chat_id=chat_id, message_id=msg_id)
     else:
-        await update.message.reply_text(chat_id, "Can't find a quote",
+        await update.message.reply_text("Can't find a quote",
                         reply_to_message_id=update.message.message_id)
 
 
@@ -370,7 +369,7 @@ async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = "\n\n".join([str(i + 1) + ":\nQuote: " + (t[0] if t[0] else "VoiceMessage") +
                             "\nTags: " + (t[1] if t[1] else "None") +
                             "\nID: " + str(t[2]) for i, t in enumerate(ret)])
-        await update.message.reply_text(update.message.chat.id, text)
+        await update.message.reply_text(text)
     finally:
         conn.close()
 
@@ -385,18 +384,18 @@ async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = " ".join(text[1:])
     conn, c = _init_db(config.quotedb)
     try:
-        ret = c.execute("""
-                        DELETE FROM quotes
-                        WHERE said_by=?
-                        AND message_id=?
-                        """,
-                        (update.message.chat.first_name.lower() + " " +
-                         update.message.chat.last_name.lower(),
-                         text)).fetchall()
+        c.execute("""
+            DELETE FROM quotes
+            WHERE said_by=?
+            AND message_id=?
+            """,
+            (update.message.chat.first_name.lower() + " " +
+                update.message.chat.last_name.lower(),
+                text))            
         conn.commit()
-        await update.message.reply_text(update.message.chat.id, "Quote deleted.")
+        await update.message.reply_text("Quote deleted.")
     except:
-        await update.message.reply_text(update.message.chat.id, "Couldn't delete quote:\n{}"
+        await update.message.reply_text("Couldn't delete quote:\n{}"
                         .format(text))
     finally:
         conn.close()
@@ -416,8 +415,7 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if reply:  # Two branches: either adding via a reply, or adding as a single message
         if not reply.text:  # Using command and not replying to a text message
-            await update.message.reply_text(message.chat.id,
-                            "Please only add text-based jokes.",
+            await update.message.reply_text("Please only add text-based jokes.",
                             reply_to_message_id=message.message_id)
             return
         joke = reply.text
@@ -427,8 +425,7 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         joke = _get_message_args(message.text)
         tags = ""
         if not joke:
-            await update.message.reply_text(message.chat.id,
-                            "Please use '/addjoke' by replying to a message or with a joke as an argument.",
+            await update.message.reply_text()"Please use '/addjoke' by replying to a message or with a joke as an argument.",
                             reply_to_message_id=message.message_id)
             return
 
@@ -441,9 +438,9 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         c.execute("INSERT INTO jokes VALUES (?, ?, ?)",
                   (joke, tags, date_added))
         conn.commit()
-        await update.message.reply_text(chat_id, "Joke added.")
+        await update.message.reply_text("Joke added.")
     except Exception as e:
-        await update.message.reply_text(chat_id, "Error adding joke:\n{}".format(e))
+        await update.message.reply_text("Error adding joke:\n{}".format(e))
     finally:
         conn.close()
 
