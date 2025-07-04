@@ -514,21 +514,24 @@ async def get_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
     identifying quotes from the db based on the text
     in joke or tags.
     """
-    msg = update.message.text.lower()
-    chat_id = update.message.chat.id
+    try:
+        msg = update.message.text.lower()
+        chat_id = update.message.chat.id
 
-    arglist = _get_message_args(update.message.text).split()
-    if arglist:
-        joke = _search_joke(arglist)
-    else:
-        joke = _random_joke()
+        arglist = _get_message_args(update.message.text).split()
+        if arglist:
+            joke = _search_joke(arglist)
+        else:
+            joke = _random_joke()
 
-    if joke:
-        await update.message.reply_text(joke)
-    else:
-        await update.message.reply_text("No jokes.",
-                        reply_to_message_id=update.message.message_id)
-
+        if joke:
+            await update.message.reply_text(joke)
+        else:
+            await update.message.reply_text("No jokes.",
+                            reply_to_message_id=update.message.message_id)
+    except Exception as e:
+        logger.error("Error in get_joke: %s", e)
+        await update.message.reply_text("Something went wrong 🤖")
 
 async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
