@@ -314,7 +314,7 @@ async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     Returns the current coffee level in the guildroom.
     """
     try:
-        result = coffee_analysis.get_coffee_analysis()
+        result = await coffee_analysis.get_coffee_analysis()
         await update.message.reply_text(f"Coffee level (dark pixels): {result}")
     except Exception as e:
         await update.message.reply_text(f"Error fetching or analyzing coffee image: {e}")
