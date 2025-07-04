@@ -155,8 +155,8 @@ async def run_all():
     application.add_handler(CommandHandler("listquotes", list_quotes))
     application.add_handler(CommandHandler("deletequote", delete_quote))
     application.add_handler(CommandHandler("joke", get_joke))
-    application.add_handler(CommandHandler("addjoke", coffee.add_joke))
-    application.add_handler(CommandHandler("coffee", get_coffee))
+    application.add_handler(CommandHandler("addjoke", add_joke))
+    application.add_handler(CommandHandler("coffee", coffee.get_coffee))
 
     # aiohttp-server
     web_app = create_web_app()
