@@ -34,7 +34,7 @@ from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, cli
 import coffee
 from joke import get_joke, add_joke
 from quote import list_quotes, add_quote, delete_quote, get_quote
-from climate import guild_data, get_plot
+from climate import guild_data, get_plot, people_count
 from logger import logger
 from climate_api import create_web_app
 
