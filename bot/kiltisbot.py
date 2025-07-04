@@ -509,7 +509,7 @@ def _random_joke():
 async def get_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Sends a joke to a chat.
-    If there are words after '/puuta', these are considered
+    If there are words after '/joke', these are considered
     search arguments and are used for limiting the search and
     identifying quotes from the db based on the text
     in joke or tags.
@@ -524,9 +524,9 @@ async def get_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         joke = _random_joke()
 
     if joke:
-        await update.message.reply_text(chat_id, joke)
+        await update.message.reply_text(joke)
     else:
-        await update.message.reply_text(chat_id, "No jokes.",
+        await update.message.reply_text("No jokes.",
                         reply_to_message_id=update.message.message_id)
 
 
