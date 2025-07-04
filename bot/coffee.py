@@ -1,5 +1,6 @@
 import time
 import io
+import math
 from PIL import Image
 import httpx
 from telegram import Update
@@ -16,7 +17,7 @@ async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     """
     try:
         result = await get_coffee_analysis()
-        await update.message.reply_text(f"Coffee level: {float(result/5000000)} %")
+        await update.message.reply_text(f"Coffee level: {result} %")
     except Exception as e:
         await update.message.reply_text(f"Error fetching or analyzing coffee image: {e}")
 
@@ -34,7 +35,8 @@ def analyze_coffee(image: Image.Image) -> int:
         for y in range(height):
             if pixels[x, y] < 50:
                 dark_pixel_count += 1
-    return dark_pixel_count
+    result = min(math.floor(dark_pixel_count/50000),100)
+    return result
 
 
 async def get_coffee_analysis():
