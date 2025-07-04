@@ -86,5 +86,3 @@ def plotting():
     # Save the figure as a png to a location
     plt.savefig(os.path.join('plots', 'newest.png'))
 
-
-plotting()

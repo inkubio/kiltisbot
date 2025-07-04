@@ -4,6 +4,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from logger import logger
 
+import plot_data
 
 def _get_climate_data():
     try:
@@ -69,12 +70,6 @@ async def get_plot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     Draws and returns a plot of the climate data from the guildroom.
     Showing the last 24h by default but can be adjusted manually.
     """
-    try:
-        import plot_data
-    except Exception as e:
-        await update.message.reply_text(f"Failed to import plot_data: {e}")
-        return
-
     try:
         plot_data.plotting()
     except Exception as e:
