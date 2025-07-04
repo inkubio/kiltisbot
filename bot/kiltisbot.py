@@ -373,7 +373,7 @@ async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         text = "\n\n".join([
-            f"{i + 1}:\nQuote: {(t[0] if t[0] else "VoiceMessage")}\nTags: {(t[1] if t[1] else "None")}\nID: {t[2]}" 
+            f"{i + 1}:\nQuote: {(t[0] if t[0] else 'VoiceMessage')}\nTags: {(t[1] if t[1] else 'None')}\nID: {t[2]}"
             for i, t in enumerate(ret)
         ])
         await update.message.reply_text(text)
