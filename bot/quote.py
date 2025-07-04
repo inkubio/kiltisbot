@@ -225,8 +225,8 @@ async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
         args = update.message.text.strip().split()
         if len(args) < 2 or not args[1].isdigit():
             await update.message.reply_text(
-                "Käyttö: /deletequote [lainauksen ID]\n"
-                "Saat ID:n komennolla /listquotes tai vastaamalla viestiin, jossa lainaus näkyy."
+                "How to use: /deletequote [quote ID]\n"
+                "You can get quote ID for your messages by using /listquotes"
             )
             return
 

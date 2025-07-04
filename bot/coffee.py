@@ -2,10 +2,23 @@ import time
 import io
 from PIL import Image
 import httpx
+from telegram import Update
+from telegram.ext import ContextTypes
+from logger import logger
 
 # Muuttujat analyysin ja aikaleiman tallentamiseen globaalisti (tai esim. config-tiedostoon)
 _last_analysis = None
 _last_analysis_time = 0
+
+async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Returns the current coffee level in the guildroom.
+    """
+    try:
+        result = await get_coffee_analysis()
+        await update.message.reply_text(f"Coffee level (dark pixels): {result}")
+    except Exception as e:
+        await update.message.reply_text(f"Error fetching or analyzing coffee image: {e}")
 
 def analyze_coffee(image: Image.Image) -> int:
     """

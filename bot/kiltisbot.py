@@ -16,24 +16,24 @@ email: okkixi@gmail.com
 import logging
 import sqlite3
 from typing import List
-
-import config
-from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, climatedb, init_climate_db
-import spotipy
-import coffee_analysis
-from joke import get_joke, add_joke
-from quote import list_quotes, add_quote, delete_quote, get_quote
-from logger import logger
 import requests
 import os
 import random
-
-
+import spotipy
 from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 from spotipy.oauth2 import SpotifyOAuth
 import time
 import socket
+
+import config
+from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, climatedb, init_climate_db
+import coffee
+from joke import get_joke, add_joke
+from quote import list_quotes, add_quote, delete_quote, get_quote
+from climate import guild_data, get_plot
+from logger import logger
+
 
 
 def _init_db(database):
@@ -65,7 +65,8 @@ def _create_db(database, init_query):
 
 """
 Define command a few command handlers and how they are used.
-These will define the actual functionality of the bot and can be used by the user.
+These will define the actual functionality of the bot and can be used by the user. 
+Commands also in quote.py, joke.py, coffee.py and climate.py
 """
 
 
@@ -111,87 +112,6 @@ async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text('Nothing is currently playing.')
 
 
-def _get_climate_data():
-    try:
-        conn = sqlite3.connect("climate.db")
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT temperature, co2, humidity FROM climate_data ORDER BY timestamp DESC LIMIT 1"
-        )
-        row = cursor.fetchone()
-        conn.close()
-        if row:
-            # row = (temp, co2, humidity)
-            return [float(row[0]), int(row[1]), float(row[2])]
-        else:
-            return [0, 0, 0]
-    except Exception as e:
-        print("DB error:", e)
-        return [0, 0, 0]
-
-
-def _get_ppl():
-    """
-    Reads the most recent climate data from the guildroom
-    and then predicts the amount of people at the guildroom.
-    The current model is linear and not very accurate, but it'll do for now.
-    """
-    co = _get_climate_data()[1]
-    if co != 0:
-        humans = round(0.018966699 * int(co) - 8.308014998, 2)
-    else:
-        humans = 0
-    return humans
-
-
-async def people_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Returns a simple value as the expected occupancy of the guildroom.
-    The value is counted in the function above.
-    """
-    await update.message.reply_text("Guildroom occupancy:\n ~{}".format(_get_ppl()))
-
-
-async def guild_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Returns a compilation of the climate data from the guildroom
-    Collected with the gmw90 attached to the wall at the guildroom.
-
-    Formatting example:
-    CO2: 652 ppm
-    Temperature: 22.1 C
-    Humidity: 29.6 %
-    People: ~9
-    """
-    temp, co, hum = _get_climate_data()[1]
-    await update.message.reply_text("CO2: {}ppm\n"
-                                    "Temperature: {}°C\n"
-                                    "Humidity: {}%\n"
-                                    "People: ~{}\n".format(co, temp, hum, _get_ppl()))
-
-
-async def get_plot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Draws and returns a plot of the climate data from the guildroom.
-    Showing the last 24h by default but can be adjusted manually.
-    """
-    import plot_data
-    plot_data.plotting()
-    pic = open("./plots/newest.png", "rb")
-    await update.get_bot().sendPhoto(update.message.chat_id, photo=pic)
-
-
-async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Returns the current coffee level in the guildroom.
-    """
-    try:
-        result = await coffee_analysis.get_coffee_analysis()
-        await update.message.reply_text(f"Coffee level (dark pixels): {result}")
-    except Exception as e:
-        await update.message.reply_text(f"Error fetching or analyzing coffee image: {e}")
-    
-
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Error handling and logging.
@@ -231,7 +151,7 @@ def main() -> None:
     application.add_handler(CommandHandler("listquotes", list_quotes))
     application.add_handler(CommandHandler("deletequote", delete_quote))
     application.add_handler(CommandHandler("joke", get_joke))
-    application.add_handler(CommandHandler("addjoke", add_joke))
+    application.add_handler(CommandHandler("addjoke", coffee.add_joke))
     application.add_handler(CommandHandler("coffee", get_coffee))
 
     # For debugging
