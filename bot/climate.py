@@ -70,6 +70,18 @@ async def get_plot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     Showing the last 24h by default but can be adjusted manually.
     """
     import plot_data
-    plot_data.plotting()
-    pic = open("./plots/newest.png", "rb")
-    await update.get_bot().sendPhoto(update.message.chat_id, photo=pic)
+    try:
+        # Generate the plot
+        plot_data.plotting()
+
+        plot_path = "./plots/newest.png"
+        if not os.path.isfile(plot_path):
+            await update.message.reply_text("Plot image not found.")
+            return
+
+        # Send the plot image to the user
+        with open(plot_path, "rb") as pic:
+            await update.get_bot().send_photo(chat_id=update.effective_chat.id, photo=pic)
+    except Exception as e:
+        # Log or send error message
+        await update.message.reply_text(f"Failed to generate plot: {e}")
