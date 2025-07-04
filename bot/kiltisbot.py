@@ -470,7 +470,7 @@ def _search_joke(args):
             ret = c.execute("""
                              SELECT joke_text
                              FROM jokes
-                             WHERE joke LIKE :arg
+                             WHERE joke_text LIKE :arg
                              """,
                              {"arg": like(arg)}
                              ).fetchall()
