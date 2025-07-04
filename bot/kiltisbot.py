@@ -368,7 +368,7 @@ async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         WHERE said_by = ?
                         """,
                         (user_fullname,)).fetchall()
-         if not ret:
+        if not ret:
             await update.message.reply_text("You have no quotes saved.")
             return
 
