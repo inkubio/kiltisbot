@@ -347,7 +347,7 @@ async def get_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if msg_id:
         await context.bot.forwardMessage(chat_id=chat_id, from_chat_id=chat_id, message_id=msg_id)
     else:
-        await context.bot.sendMessage(chat_id, "Can't find a quote",
+        await update.message.reply_text(chat_id, "Can't find a quote",
                         reply_to_message_id=update.message.message_id)
 
 
@@ -370,7 +370,7 @@ async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = "\n\n".join([str(i + 1) + ":\nQuote: " + (t[0] if t[0] else "VoiceMessage") +
                             "\nTags: " + (t[1] if t[1] else "None") +
                             "\nID: " + str(t[2]) for i, t in enumerate(ret)])
-        await context.bot.sendMessage(update.message.chat.id, text)
+        await update.message.reply_text(update.message.chat.id, text)
     finally:
         conn.close()
 
@@ -394,9 +394,9 @@ async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
                          update.message.chat.last_name.lower(),
                          text)).fetchall()
         conn.commit()
-        await context.bot.sendMessage(update.message.chat.id, "Quote deleted.")
+        await update.message.reply_text(update.message.chat.id, "Quote deleted.")
     except:
-        await context.bot.sendMessage(update.message.chat.id, "Couldn't delete quote:\n{}"
+        await update.message.reply_text(update.message.chat.id, "Couldn't delete quote:\n{}"
                         .format(text))
     finally:
         conn.close()
@@ -408,7 +408,7 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Adds a joke from a telegram chat to generic database.
     User can reply to a joke or add one as an argument after
-    the command '/lisaapuuta'
+    the command '/addjoke'
     """
 
     message = update.message
@@ -416,7 +416,7 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if reply:  # Two branches: either adding via a reply, or adding as a single message
         if not reply.text:  # Using command and not replying to a text message
-            await context.bot.sendMessage(message.chat.id,
+            await update.message.reply_text(message.chat.id,
                             "Please only add text-based jokes.",
                             reply_to_message_id=message.message_id)
             return
@@ -427,8 +427,8 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         joke = _get_message_args(message.text)
         tags = ""
         if not joke:
-            await context.bot.sendMessage(message.chat.id,
-                            "Please use '/lisaapuuta' by replying to a message or with a joke as an argument.",
+            await update.message.reply_text(message.chat.id,
+                            "Please use '/addjoke' by replying to a message or with a joke as an argument.",
                             reply_to_message_id=message.message_id)
             return
 
@@ -441,12 +441,9 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         c.execute("INSERT INTO jokes VALUES (?, ?, ?)",
                   (joke, tags, date_added))
         conn.commit()
-        if said_by == "roope vesterinen" or said_by == "eero linna":
-            await context.bot.sendMessage(chat_id, "Ulos.")
-        else:
-            await context.bot.sendMessage(chat_id, "Puu added.")
+        await update.message.reply_text(chat_id, "Joke added.")
     except Exception as e:
-        await context.bot.sendMessage(chat_id, "Error adding puuta:\n{}".format(e))
+        await update.message.reply_text(chat_id, "Error adding joke:\n{}".format(e))
     finally:
         conn.close()
 
@@ -520,9 +517,9 @@ async def get_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         joke = _random_joke()
 
     if joke:
-        await context.bot.sendMessage(chat_id, joke)
+        await update.message.reply_text(chat_id, joke)
     else:
-        await context.bot.sendMessage(chat_id, "Not enough puuta.",
+        await update.message.reply_text(chat_id, "No jokes.",
                         reply_to_message_id=update.message.message_id)
 
 
