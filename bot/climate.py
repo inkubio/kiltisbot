@@ -57,7 +57,7 @@ async def guild_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     Humidity: 29.6 %
     People: ~9
     """
-    temp, co, hum = _get_climate_data()[1]
+    temp, co, hum = _get_climate_data()
     await update.message.reply_text("CO2: {}ppm\n"
                                     "Temperature: {}°C\n"
                                     "Humidity: {}%\n"

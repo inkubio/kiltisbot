@@ -241,14 +241,14 @@ async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn.commit()
 
         if deleted.rowcount > 0:
-            await update.message.reply_text("Lainaus poistettu.")
+            await update.message.reply_text("Quote removed.")
         else:
             await update.message.reply_text(
-                "Lainausta ei löytynyt ID:llä tai se ei ole sinun.\n"
-                "Tarkista ID komennolla /listquotes."
+                "Quote was not found with that ID or it's not your quote.\n"
+                "Check ID with /listquotes."
             )
 
     except Exception as e:
-        await update.message.reply_text(f"Virhe poistaessa lainausta: {e}")
+        await update.message.reply_text(f"Error removing quote: {e}")
     finally:
         conn.close()
