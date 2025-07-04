@@ -24,10 +24,9 @@ from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 from spotipy.oauth2 import SpotifyOAuth
 import time
-import socket
-import asyncio
 import json
-from aiohttp import http, web
+from aiohttp import web
+from multiprocessing import Process
 
 import config
 from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, climatedb, init_climate_db
@@ -130,8 +129,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     print(update)
 
 
-# Starting and running the bot from here
-async def run_all():
+def start_bot():
 
     # Create databases if they don't already exist
     if not os.path.isfile(quotedb):
@@ -158,13 +156,6 @@ async def run_all():
     application.add_handler(CommandHandler("addjoke", add_joke))
     application.add_handler(CommandHandler("coffee", coffee.get_coffee))
 
-    # aiohttp-server
-    web_app = create_web_app()
-    runner = web.AppRunner(web_app)
-    await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', 8000)
-    await site.start()
-
     # For debugging
     # application.add_handler(CommandHandler("echo", echo))
 
@@ -172,10 +163,20 @@ async def run_all():
     application.add_error_handler(error)
 
     # Run the bot until the user presses Ctrl-C
-    await application.run_polling(allowed_updates=Update.ALL_TYPES)
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
-def main():
-    asyncio.run(run_all())
+def run_web_app():
+    app = create_web_app()
+    web.run_app(app, host='0.0.0.0', port=8000)
+
+def main() -> None:
+    bot_process = Process(target=start_bot)
+    bot_process.start()
+    print(f"Bot process started with PID {bot_process.pid}")
+    
+    run_web_app()
+    
+    bot_process.join()  # Odottaa botin loppumista (Ctrl-C)
 
 
 if __name__ == '__main__':
