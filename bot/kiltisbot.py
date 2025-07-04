@@ -18,10 +18,12 @@ import sqlite3
 from typing import List
 
 import config
+from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, climatedb, init_climate_db
 import spotipy
 import coffee_analysis
 from joke import get_joke, add_joke
 from quote import list_quotes, add_quote, delete_quote
+from logger import logger
 import requests
 import os
 import random
@@ -32,14 +34,6 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 from spotipy.oauth2 import SpotifyOAuth
 import time
 import socket
-
-
-# Enable logging.
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
-# Set a higher logging level for httpx to avoid all GET and POST requests being logged.
-logging.getLogger("httpx").setLevel(logging.WARNING)
-# noinspection DuplicatedCode
-logger = logging.getLogger(__name__)
 
 
 def _init_db(database):
@@ -216,12 +210,12 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 def main() -> None:
 
     # Create databases if they don't already exist
-    if not os.path.isfile(config.quotedb):
-        _create_db(config.quotedb, config.init_quote_db)
-    if not os.path.isfile(config.jokedb):
-        _create_db(config.jokedb, config.init_joke_db)
-    if not os.path.isfile(config.climatedb):
-        _create_db(config.climatedb, config.init_climate_db)
+    if not os.path.isfile(quotedb):
+        _create_db(quotedb, init_quote_db)
+    if not os.path.isfile(jokedb):
+        _create_db(jokedb, init_joke_db)
+    if not os.path.isfile(climatedb):
+        _create_db(climatedb, init_climate_db)
 
     # Create the Application and pass it your bot's token (found int the config-file)
     application = Application.builder().token(config.kiltistoken).build()

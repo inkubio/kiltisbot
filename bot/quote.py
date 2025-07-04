@@ -4,8 +4,9 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 from config import config
+from db_utils import quotedb
 from kiltisbot import _init_db
-from kiltisbot import logger
+from logger import logger
 
 def _get_message_args(string):
     """
@@ -22,7 +23,7 @@ def _search_msg_id(chat_id, args):
     def like(string):
         return "%{}%".format(string)
 
-    conn, c = _init_db(config.quotedb)
+    conn, c = _init_db(quotedb)
     results = []
     try:
         for arg in args:
@@ -61,7 +62,7 @@ def _random_msg_id(chat_id):
     """
     Returns a random quote from the same chat as the request
     """
-    conn, c = _init_db(config.quotedb)
+    conn, c = _init_db(quotedb)
     ret = None
     try:
         ret = c.execute("""
@@ -129,7 +130,7 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     added_date = message.date.strftime("%Y.%m.%d %H:%M")
     print(added_date)
 
-    conn, c = _init_db(config.quotedb)
+    conn, c = _init_db(quotedb)
     try:
         c.execute("INSERT INTO quotes VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                   (quote_text, tags, message_id, chat_id, said_by, added_by, said_date, added_date))
@@ -180,7 +181,7 @@ async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     if update.message.chat.type != "private":
         return
-    conn, c = _init_db(config.quotedb)
+    conn, c = _init_db(quotedb)
     try:
         first_name = update.message.chat.first_name or ""
         last_name = update.message.chat.last_name or ""
@@ -215,7 +216,7 @@ async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.chat.type != "private":
         return
 
-    conn, c = _init_db(config.quotedb)
+    conn, c = _init_db(quotedb)
     try:
         args = update.message.text.strip().split()
         if len(args) < 2 or not args[1].isdigit():

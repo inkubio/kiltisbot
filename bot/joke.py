@@ -6,8 +6,9 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 import config
+from db_utils import jokedb
 from kiltisbot import _init_db
-from kiltisbot import logger
+from logger import logger
 
 def _get_message_args(string):
     """
@@ -45,7 +46,7 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
     date_added = int(message.date.timestamp())
     said_by = message.from_user.first_name.lower() + " " + message.from_user.last_name.lower()
 
-    conn, c = _init_db(config.jokedb)
+    conn, c = _init_db(jokedb)
     try:
         c.execute("INSERT INTO jokes VALUES (?, ?, ?)",
                   (joke, tags, date_added))
@@ -65,7 +66,7 @@ def _search_joke(args):
     def like(string):
         return "%{}%".format(string)
 
-    conn, c = _init_db(config.jokedb)
+    conn, c = _init_db(jokedb)
     results = []
     try:
         for arg in args:
@@ -95,7 +96,7 @@ def _random_joke():
     """
     Returns a random joke
     """
-    conn, c = _init_db(config.jokedb)
+    conn, c = _init_db(jokedb)
     ret = None
     try:
         ret = c.execute("""
