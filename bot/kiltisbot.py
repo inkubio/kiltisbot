@@ -22,7 +22,7 @@ from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, cli
 import spotipy
 import coffee_analysis
 from joke import get_joke, add_joke
-from quote import list_quotes, add_quote, delete_quote
+from quote import list_quotes, add_quote, delete_quote, get_quote
 from logger import logger
 import requests
 import os
