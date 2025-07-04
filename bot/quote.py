@@ -4,8 +4,7 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 from config import config
-from db_utils import quotedb
-from kiltisbot import _init_db
+from db_utils import quotedb, _init_db
 from logger import logger
 
 def _get_message_args(string):

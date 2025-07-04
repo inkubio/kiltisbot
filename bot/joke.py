@@ -6,8 +6,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 import config
-from db_utils import jokedb
-from kiltisbot import _init_db
+from db_utils import jokedb, _init_db
 from logger import logger
 
 def _get_message_args(string):
