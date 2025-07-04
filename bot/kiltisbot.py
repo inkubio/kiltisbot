@@ -97,7 +97,7 @@ def _search_msg_id(chat_id, args):
                              SELECT message_id
                              FROM quotes
                              WHERE chat_id=:id
-                             AND quote LIKE :arg
+                             AND quote_text LIKE :arg
                              """,
                              {"id": str(chat_id), "arg": like(arg)}
                              ).fetchall()
@@ -363,7 +363,7 @@ async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_fullname = (first_name + " " + last_name).strip().lower()
 
         ret = c.execute("""
-                        SELECT quote, tags, message_id
+                        SELECT quote_text, tags, message_id
                         FROM quotes
                         WHERE said_by = ?
                         """,
