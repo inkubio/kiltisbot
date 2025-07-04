@@ -4,6 +4,7 @@ import glob
 import os.path
 import os
 import sqlite3
+import pytz
 from datetime import datetime, timedelta
 import pytz
 import pandas as pd
@@ -67,7 +68,6 @@ def plotting():
     # Convert timestamp column to datetime and localize
     df['time'] = pd.to_datetime(df['timestamp']).dt.tz_localize('UTC').dt.tz_convert('Europe/Helsinki')
 
-
     # Plot data and show results
     ax = plt.subplot(3, 1, 1,)
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
@@ -82,7 +82,9 @@ def plotting():
     plt.scatter(x=df.time, y=df.humidity, s=2)
     plt.ylabel('Humidity (RH%)')
 
-    plt.suptitle(datetime.now().strftime('Kiltis %d.%m.%Y at %H:%M:%S'), fontsize=20)
+    helsinki_tz = pytz.timezone('Europe/Helsinki')
+    now_hel = datetime.now(helsinki_tz)
+    plt.suptitle(now_hel.strftime('Kiltis %d.%m.%Y at %H:%M:%S'), fontsize=20)
     
     os.makedirs('plots', exist_ok=True)
     # Save the figure as a png to a location
