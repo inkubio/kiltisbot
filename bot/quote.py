@@ -87,47 +87,44 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Using command when not replying
     if not update.effective_message.reply_to_message:
         await update.message.reply_text("Please use '/addquote' by replying to a message.")
+        return
 
-    # Using command and not replying to a text or a voice message (useless spam, don't want that)
-    if not update.message.reply_to_message.text and not update.message.reply_to_message.voice:
+    reply = update.message.reply_to_message
+
+    # Using command and not replying to a text or a voice message
+    if not reply.text and not reply.voice:
         await update.message.reply_text("Please only add text or voice quotes.")
+        return
 
-    # Using command without tags on a voice message (can't search non-text entries in db)
-    if update.message.reply_to_message.voice and not _get_message_args(update.message.text):
+    # Using command without tags on a voice message
+    if reply.voice and not _get_message_args(update.message.text):
         await update.message.reply_text("Please add search tags after '/addquote' for voice messages.")
+        return
 
     message = update.message
-    print(message)
-    reply = message.reply_to_message
-    print(reply)
-    quote_text = reply.text.lower()
-    print(quote_text)
+    quote_text = reply.text.lower() if reply.text else "[voice message]"
     tags = _get_message_args(message.text)
-    print(tags)
     message_id = reply.message_id
-    print(message_id)
     chat_id = reply.chat.id
-    print(chat_id)
 
+    # Get "added_by" from the message being replied to
     if reply.from_user:
-        reply_first_name = reply.from_user.first_name
+        first_name = reply.from_user.first_name or ""
         last_name = reply.from_user.last_name or ""
-        added_by = reply_first_name.lower() + (" " + reply_last_name.lower() if reply_last_name else "")
+        added_by = f"{first_name} {last_name}".strip().lower()
     else:
-        reply_first_name = reply.from_user.first_name
-        reply_last_name = reply.from_user.last_name
-        added_by = reply_first_name.lower() + (" " + reply_last_name.lower() if reply_last_name else "")
+        added_by = "unknown"
 
-    message_first_name = message.from_user.first_name
-    message_last_name = message.from_user.last_name or ""
-    said_by = message_first_name.lower() + (" " + message_last_name.lower() if message_last_name else "")
-    print(added_by)
-    print(said_by)
+    # Get "said_by" from the person who issued the command
+    if message.from_user:
+        sfname = message.from_user.first_name or ""
+        slname = message.from_user.last_name or ""
+        said_by = f"{sfname} {slname}".strip().lower()
+    else:
+        said_by = "unknown"
 
     said_date = reply.date.strftime("%Y.%m.%d %H:%M")
-    print(said_date)
     added_date = message.date.strftime("%Y.%m.%d %H:%M")
-    print(added_date)
 
     conn, c = _init_db(quotedb)
     try:
@@ -136,16 +133,24 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.commit()
         await update.message.reply_text("Quote added.")
     except Exception as e:
-        if str(e).startswith("UNIQUE constraint failed") and _get_message_args(update.message.text):
-            old_tags = c.execute("SELECT tags FROM quotes WHERE message_id = ?", (str(message_id),)).fetchone()
-            new_tags = " ".join(list(set(old_tags[0].split() + tags.split())))
-            c.execute("UPDATE quotes SET tags = ? WHERE message_id = ?", (new_tags, str(message_id)))
-            conn.commit()
-            await update.message.reply_text("Message already added! Tags updated.")
+        logger.error("Error while adding quote: %s", e)
+        if str(e).startswith("UNIQUE constraint failed") and tags:
+            try:
+                old_tags = c.execute("SELECT tags FROM quotes WHERE message_id = ?", (str(message_id),)).fetchone()
+                if old_tags:
+                    new_tags = " ".join(sorted(set(old_tags[0].split() + tags.split())))
+                    c.execute("UPDATE quotes SET tags = ? WHERE message_id = ?", (new_tags, str(message_id)))
+                    conn.commit()
+                    await update.message.reply_text("Message already added! Tags updated.")
+                else:
+                    await update.message.reply_text("Could not update tags: quote not found.")
+            except Exception as tag_err:
+                logger.error("Tag update failed: %s", tag_err)
+                await update.message.reply_text("Error updating tags.")
         elif str(e).startswith("UNIQUE constraint failed"):
             await update.message.reply_text("Error adding quote:\nMessage already added!")
         else:
-            await update.message.reply_text("Error adding quote:\n{}".format(e))
+            await update.message.reply_text(f"Error adding quote:\n{e}")
     finally:
         conn.close()
 
