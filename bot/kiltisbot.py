@@ -71,6 +71,67 @@ def _get_message_args(string):
     """
     return " ".join([tag for tag in string.split() if tag[0] != '/'])
 
+def _search_msg_id(chat_id, args):
+    """
+    Fetches a random possible meaning of search term
+    (only text, first name and text or full name and text)
+    one arg at a time. For getting quotes.
+    """
+    def like(string):
+        return "%{}%".format(string)
+
+    conn, c = _init_db(config.quotedb)
+    results = []
+    try:
+        for arg in args:
+            ret = c.execute("""
+                            SELECT message_id
+                            FROM quotes
+                            WHERE chat_id=:id
+                            AND said_by LIKE :arg
+                            """,
+                            {"id": str(chat_id), "arg": like(arg)}
+                            ).fetchall()
+            ret += c.execute("""
+                             SELECT message_id
+                             FROM quotes
+                             WHERE chat_id=:id
+                             AND quote LIKE :arg
+                             """,
+                             {"id": str(chat_id), "arg": like(arg)}
+                             ).fetchall()
+            ret += c.execute("""
+                             SELECT message_id
+                             FROM quotes
+                             WHERE chat_id=:id
+                             AND tags LIKE :arg
+                             """,
+                             {"id": str(chat_id), "arg": like(arg)}
+                             ).fetchall()
+            results.extend(ret)
+    finally:
+        conn.close()
+
+    id = random.choice(results)[0] if results else None
+    return id
+
+def _random_msg_id(chat_id):
+    """
+    Returns a random quote from the same chat as the request
+    """
+    conn, c = _init_db(config.quotedb)
+    ret = None
+    try:
+        ret = c.execute("""
+                        SELECT message_id
+                        FROM quotes
+                        WHERE chat_id=?
+                        ORDER BY RANDOM() LIMIT 1
+                        """,
+                        (str(chat_id),)).fetchone()
+    finally:
+        conn.close()
+    return ret[0] if ret else None
 
 """
 Define command a few command handlers and how they are used.
@@ -95,6 +156,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                     "/deletequote ->\nDelete a quote from the bot\n\n"
                                     "/joke ->\nGet a joke from the bot\n\n"
                                     "/addjoke ->\nAdd a joke to the bot\n\n"
+                                    "/coffee ->\nHow much coffee is in quildroom coffee pan\n\n"
                                     "If there are any problems with the bot or suggestions for future functions,"
                                     "contact spagutmk or @apeoskari")
 
@@ -265,7 +327,7 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.close()
 
 
-async def quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def get_quote(bot, update):
     """
     Forwards a quote to a chat.
     If there are words after '/quote', these are considered
@@ -273,24 +335,174 @@ async def quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     identifying quotes from the db based on the quotee, text
     in quote or tags.
     """
-    await update.message.reply_text("Searching quote")
+    msg = update.message.text.lower()
+    chat_id = update.message.chat.id
+
+    arglist = _get_message_args(update.message.text).split()
+    if arglist:
+        msg_id = _search_msg_id(chat_id, arglist)
+    else:
+        msg_id = _random_msg_id(chat_id)
+
+    if msg_id:
+        bot.forwardMessage(chat_id=chat_id, from_chat_id=chat_id, message_id=msg_id)
+    else:
+        bot.sendMessage(chat_id, "Can't find a quote",
+                        reply_to_message_id=update.message.message_id)
 
 
-async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def list_quotes(bot, update):
     """
     Lists all quotes of a user to him in private chat
     """
-    await update.message.reply_text("Getting a list of quotes")
+    if update.message.chat.type != "private":
+        return
+    conn, c = _init_db(config.quotedb)
+    try:
+        ret = c.execute("""
+                        SELECT quote, tags, message_id
+                        FROM quotes
+                        WHERE said_by = ?
+                        """,
+                        (update.message.chat.first_name.lower() + " " +
+                         update.message.chat.last_name.lower(),)).fetchall()
+
+        text = "\n\n".join([str(i + 1) + ":\nQuote: " + (t[0] if t[0] else "VoiceMessage") +
+                            "\nTags: " + (t[1] if t[1] else "None") +
+                            "\nID: " + str(t[2]) for i, t in enumerate(ret)])
+        bot.sendMessage(update.message.chat.id, text)
+    finally:
+        conn.close()
 
 
-async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def delete_quote(bot, update):
     """
     Deletes a quote by same user requesting deletion
     """
-    await update.message.reply_text("Deleting a quote")
+    if update.message.chat.type != "private":
+        return
+    text = update.message.text.lower().split()
+    text = " ".join(text[1:])
+    conn, c = _init_db(config.quotedb)
+    try:
+        ret = c.execute("""
+                        DELETE FROM quotes
+                        WHERE said_by=?
+                        AND message_id=?
+                        """,
+                        (update.message.chat.first_name.lower() + " " +
+                         update.message.chat.last_name.lower(),
+                         text)).fetchall()
+        conn.commit()
+        bot.sendMessage(update.message.chat.id, "Quote deleted.")
+    except:
+        bot.sendMessage(update.message.chat.id, "Couldn't delete quote:\n{}"
+                        .format(text))
+    finally:
+        conn.close()
 
 
-async def joke(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+
+def add_joke(bot, update):
+    """
+    Adds a joke from a telegram chat to generic database.
+    User can reply to a joke or add one as an argument after
+    the command '/lisaapuuta'
+    """
+
+    message = update.message
+    reply = message.reply_to_message
+
+    if reply:  # Two branches: either adding via a reply, or adding as a single message
+        if not reply.text:  # Using command and not replying to a text message
+            bot.sendMessage(message.chat.id,
+                            "Please only add text-based jokes.",
+                            reply_to_message_id=message.message_id)
+            return
+        joke = reply.text
+        tags = _get_message_args(message.text)
+
+    else:  # Not a reply
+        joke = _get_message_args(message.text)
+        tags = ""
+        if not joke:
+            bot.sendMessage(message.chat.id,
+                            "Please use '/lisaapuuta' by replying to a message or with a joke as an argument.",
+                            reply_to_message_id=message.message_id)
+            return
+
+    chat_id = message.chat.id
+    date_added = int(message.date.timestamp())
+    said_by = message.from_user.first_name.lower() + " " + message.from_user.last_name.lower()
+
+    conn, c = _init_db(config.jokedb)
+    try:
+        c.execute("INSERT INTO jokes VALUES (?, ?, ?)",
+                  (joke, tags, date_added))
+        conn.commit()
+        if said_by == "roope vesterinen" or said_by == "eero linna":
+            bot.sendMessage(chat_id, "Ulos.")
+        else:
+            bot.sendMessage(chat_id, "Puu added.")
+    except Exception as e:
+        bot.sendMessage(chat_id, "Error adding puuta:\n{}".format(e))
+    finally:
+        conn.close()
+
+
+def _search_joke(args):
+    """
+    Fetches a random joke based on arguments, which are matched
+    with text of joke or tags of joke
+    """
+    def like(string):
+        return "%{}%".format(string)
+
+    conn, c = _init_db(config.jokedb)
+    results = []
+    try:
+        for arg in args:
+            ret = c.execute("""
+                             SELECT joke
+                             FROM jokes
+                             WHERE joke LIKE :arg
+                             """,
+                             {"arg": like(arg)}
+                             ).fetchall()
+            ret += c.execute("""
+                             SELECT joke
+                             FROM jokes
+                             WHERE tags LIKE :arg
+                             """,
+                             {"arg": like(arg)}
+                             ).fetchall()
+            results.extend(ret)
+    finally:
+        conn.close()
+
+    joke = random.choice(results)[0] if results else None
+    return joke
+
+
+def _random_joke():
+    """
+    Returns a random joke
+    """
+    conn, c = _init_db(config.jokedb)
+    ret = None
+    try:
+        ret = c.execute("""
+                        SELECT joke
+                        FROM jokes
+                        ORDER BY RANDOM() LIMIT 1
+                        """).fetchone()
+    finally:
+        conn.close()
+    return ret[0] if ret else None
+
+
+def get_joke(bot, update):
     """
     Sends a joke to a chat.
     If there are words after '/puuta', these are considered
@@ -298,16 +510,21 @@ async def joke(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     identifying quotes from the db based on the text
     in joke or tags.
     """
-    await update.message.reply_text("Getting joke")
+    msg = update.message.text.lower()
+    chat_id = update.message.chat.id
 
+    arglist = _get_message_args(update.message.text).split()
+    if arglist:
+        joke = _search_joke(arglist)
+    else:
+        joke = _random_joke()
 
-async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Adds a joke from a telegram chat to generic database.
-    User can reply to a joke or add one as an argument after
-    the command '/lisaapuuta'
-    """
-    await update.message.reply_text("Adding joke")
+    if joke:
+        bot.sendMessage(chat_id, joke)
+    else:
+        bot.sendMessage(chat_id, "Not enough puuta.",
+                        reply_to_message_id=update.message.message_id)
+
 
 async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
@@ -358,7 +575,7 @@ def main() -> None:
     application.add_handler(CommandHandler("quote", quote))
     application.add_handler(CommandHandler("listquotes", list_quotes))
     application.add_handler(CommandHandler("deletequote", delete_quote))
-    application.add_handler(CommandHandler("joke", joke))
+    application.add_handler(CommandHandler("joke", get_joke))
     application.add_handler(CommandHandler("addjoke", add_joke))
     application.add_handler(CommandHandler("coffee", get_coffee))
 
