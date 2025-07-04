@@ -16,7 +16,7 @@ async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     """
     try:
         result = await get_coffee_analysis()
-        await update.message.reply_text(f"Coffee level (dark pixels): {result}")
+        await update.message.reply_text(f"Coffee level: {float(result/5000000)} %")
     except Exception as e:
         await update.message.reply_text(f"Error fetching or analyzing coffee image: {e}")
 
@@ -25,7 +25,7 @@ def analyze_coffee(image: Image.Image) -> int:
     Tässä sinun analyysifunktio, joka laskee tumma pikseliä yms.
     Palauttaa analyysin tuloksen (esim. tumma pikselimäärä).
     """
-    # Esimerkki: lasketaan tumma pikseli (dummy)
+    # Esimerkki: lasketaan tummat pikselit
     grayscale = image.convert("L")
     pixels = grayscale.load()
     width, height = image.size
