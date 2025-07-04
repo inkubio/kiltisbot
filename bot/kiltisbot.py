@@ -425,7 +425,7 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         joke = _get_message_args(message.text)
         tags = ""
         if not joke:
-            await update.message.reply_text("Please use '/addjoke' by replying to a message or with a joke as an argument.",
+            await update.message.reply_text()"Please use '/addjoke' by replying to a message or with a joke as an argument.",
                             reply_to_message_id=message.message_id)
             return
 
