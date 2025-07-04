@@ -352,27 +352,37 @@ async def get_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Lists all quotes of a user to him in private chat
+    Lists all quotes of a user to them in private chat
     """
     if update.message.chat.type != "private":
         return
     conn, c = _init_db(config.quotedb)
     try:
+        first_name = update.message.chat.first_name or ""
+        last_name = update.message.chat.last_name or ""
+        user_fullname = (first_name + " " + last_name).strip().lower()
+
         ret = c.execute("""
                         SELECT quote, tags, message_id
                         FROM quotes
                         WHERE said_by = ?
                         """,
-                        (update.message.chat.first_name.lower() + " " +
-                         update.message.chat.last_name.lower(),)).fetchall()
+                        (user_fullname,)).fetchall()
+         if not ret:
+            await update.message.reply_text("You have no quotes saved.")
+            return
 
-        text = "\n\n".join([str(i + 1) + ":\nQuote: " + (t[0] if t[0] else "VoiceMessage") +
-                            "\nTags: " + (t[1] if t[1] else "None") +
-                            "\nID: " + str(t[2]) for i, t in enumerate(ret)])
+        text = "\n\n".join([
+            f"{i + 1}:\nQuote: {(t[0] if t[0] else "VoiceMessage")}\nTags: {(t[1] if t[1] else "None")}\nID: {t[2]}" 
+            for i, t in enumerate(ret)
+        ])
         await update.message.reply_text(text)
+    except Exception as e:
+        logger.exception("Error in list_quotes")
+        await update.message.reply_text("An error occurred while listing your quotes.")
     finally:
-        conn.close()
-
+        if conn:
+            conn.close()
 
 async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
