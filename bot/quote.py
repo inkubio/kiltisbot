@@ -3,7 +3,7 @@ import sqlite3
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
-from config import config
+import config
 from db_utils import quotedb, _init_db
 from logger import logger
 
