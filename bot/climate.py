@@ -69,19 +69,20 @@ async def get_plot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     Draws and returns a plot of the climate data from the guildroom.
     Showing the last 24h by default but can be adjusted manually.
     """
-    import plot_data
     try:
-        # Generate the plot
-        plot_data.plotting()
-
-        plot_path = "./plots/newest.png"
-        if not os.path.isfile(plot_path):
-            await update.message.reply_text("Plot image not found.")
-            return
-
-        # Send the plot image to the user
-        with open(plot_path, "rb") as pic:
-            await update.get_bot().send_photo(chat_id=update.effective_chat.id, photo=pic)
+        import plot_data
     except Exception as e:
-        # Log or send error message
-        await update.message.reply_text(f"Failed to generate plot: {e}")
+        await update.message.reply_text(f"Failed to import plot_data: {e}")
+        return
+
+    try:
+        plot_data.plotting()
+    except Exception as e:
+        await update.message.reply_text(f"Plotting failed: {e}")
+        return
+
+    try:
+        with open("./plots/newest.png", "rb") as pic:
+            await update.get_bot().send_photo(chat_id=update.message.chat_id, photo=pic)
+    except Exception as e:
+        await update.message.reply_text(f"Sending photo failed: {e}")
