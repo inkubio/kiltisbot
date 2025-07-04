@@ -327,7 +327,7 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.close()
 
 
-def get_quote(bot, update):
+async def get_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Forwards a quote to a chat.
     If there are words after '/quote', these are considered
@@ -345,13 +345,13 @@ def get_quote(bot, update):
         msg_id = _random_msg_id(chat_id)
 
     if msg_id:
-        bot.forwardMessage(chat_id=chat_id, from_chat_id=chat_id, message_id=msg_id)
+        await context.bot.forwardMessage(chat_id=chat_id, from_chat_id=chat_id, message_id=msg_id)
     else:
-        bot.sendMessage(chat_id, "Can't find a quote",
+        await context.bot.sendMessage(chat_id, "Can't find a quote",
                         reply_to_message_id=update.message.message_id)
 
 
-def list_quotes(bot, update):
+async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Lists all quotes of a user to him in private chat
     """
@@ -370,12 +370,12 @@ def list_quotes(bot, update):
         text = "\n\n".join([str(i + 1) + ":\nQuote: " + (t[0] if t[0] else "VoiceMessage") +
                             "\nTags: " + (t[1] if t[1] else "None") +
                             "\nID: " + str(t[2]) for i, t in enumerate(ret)])
-        bot.sendMessage(update.message.chat.id, text)
+        await context.bot.sendMessage(update.message.chat.id, text)
     finally:
         conn.close()
 
 
-def delete_quote(bot, update):
+async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Deletes a quote by same user requesting deletion
     """
@@ -394,9 +394,9 @@ def delete_quote(bot, update):
                          update.message.chat.last_name.lower(),
                          text)).fetchall()
         conn.commit()
-        bot.sendMessage(update.message.chat.id, "Quote deleted.")
+        await context.bot.sendMessage(update.message.chat.id, "Quote deleted.")
     except:
-        bot.sendMessage(update.message.chat.id, "Couldn't delete quote:\n{}"
+        await context.bot.sendMessage(update.message.chat.id, "Couldn't delete quote:\n{}"
                         .format(text))
     finally:
         conn.close()
@@ -404,7 +404,7 @@ def delete_quote(bot, update):
 
 
 
-def add_joke(bot, update):
+async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Adds a joke from a telegram chat to generic database.
     User can reply to a joke or add one as an argument after
@@ -416,7 +416,7 @@ def add_joke(bot, update):
 
     if reply:  # Two branches: either adding via a reply, or adding as a single message
         if not reply.text:  # Using command and not replying to a text message
-            bot.sendMessage(message.chat.id,
+            await context.bot.sendMessage(message.chat.id,
                             "Please only add text-based jokes.",
                             reply_to_message_id=message.message_id)
             return
@@ -427,7 +427,7 @@ def add_joke(bot, update):
         joke = _get_message_args(message.text)
         tags = ""
         if not joke:
-            bot.sendMessage(message.chat.id,
+            await context.bot.sendMessage(message.chat.id,
                             "Please use '/lisaapuuta' by replying to a message or with a joke as an argument.",
                             reply_to_message_id=message.message_id)
             return
@@ -442,11 +442,11 @@ def add_joke(bot, update):
                   (joke, tags, date_added))
         conn.commit()
         if said_by == "roope vesterinen" or said_by == "eero linna":
-            bot.sendMessage(chat_id, "Ulos.")
+            await context.bot.sendMessage(chat_id, "Ulos.")
         else:
-            bot.sendMessage(chat_id, "Puu added.")
+            await context.bot.sendMessage(chat_id, "Puu added.")
     except Exception as e:
-        bot.sendMessage(chat_id, "Error adding puuta:\n{}".format(e))
+        await context.bot.sendMessage(chat_id, "Error adding puuta:\n{}".format(e))
     finally:
         conn.close()
 
@@ -502,7 +502,7 @@ def _random_joke():
     return ret[0] if ret else None
 
 
-def get_joke(bot, update):
+async def get_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Sends a joke to a chat.
     If there are words after '/puuta', these are considered
@@ -520,9 +520,9 @@ def get_joke(bot, update):
         joke = _random_joke()
 
     if joke:
-        bot.sendMessage(chat_id, joke)
+        await context.bot.sendMessage(chat_id, joke)
     else:
-        bot.sendMessage(chat_id, "Not enough puuta.",
+        await context.bot.sendMessage(chat_id, "Not enough puuta.",
                         reply_to_message_id=update.message.message_id)
 
 
