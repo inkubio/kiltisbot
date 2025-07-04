@@ -468,14 +468,14 @@ def _search_joke(args):
     try:
         for arg in args:
             ret = c.execute("""
-                             SELECT joke
+                             SELECT joke_text
                              FROM jokes
                              WHERE joke LIKE :arg
                              """,
                              {"arg": like(arg)}
                              ).fetchall()
             ret += c.execute("""
-                             SELECT joke
+                             SELECT joke_text
                              FROM jokes
                              WHERE tags LIKE :arg
                              """,
@@ -497,7 +497,7 @@ def _random_joke():
     ret = None
     try:
         ret = c.execute("""
-                        SELECT joke
+                        SELECT joke_text
                         FROM jokes
                         ORDER BY RANDOM() LIMIT 1
                         """).fetchone()
