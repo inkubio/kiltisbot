@@ -172,7 +172,7 @@ async def run_all():
     application.add_error_handler(error)
 
     # Run the bot until the user presses Ctrl-C
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    await application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 def main():
     asyncio.run(run_all())
