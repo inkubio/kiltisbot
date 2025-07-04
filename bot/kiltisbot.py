@@ -572,7 +572,7 @@ def main() -> None:
     application.add_handler(CommandHandler("numbers", guild_data))
     application.add_handler(CommandHandler("plot", get_plot))
     application.add_handler(CommandHandler("addquote", add_quote))
-    application.add_handler(CommandHandler("quote", quote))
+    application.add_handler(CommandHandler("quote", get_quote))
     application.add_handler(CommandHandler("listquotes", list_quotes))
     application.add_handler(CommandHandler("deletequote", delete_quote))
     application.add_handler(CommandHandler("joke", get_joke))
