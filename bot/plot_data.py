@@ -2,6 +2,7 @@
 
 import glob
 import os.path
+import os
 import sqlite3
 from datetime import datetime, timedelta
 import pytz
@@ -82,7 +83,8 @@ def plotting():
     plt.ylabel('Humidity (RH%)')
 
     plt.suptitle(datetime.now().strftime('Kiltis %d.%m.%Y at %H:%M:%S'), fontsize=20)
-
+    
+    os.makedirs('plots', exist_ok=True)
     # Save the figure as a png to a location
     plt.savefig(os.path.join('plots', 'newest.png'))
 
