@@ -25,6 +25,9 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 from spotipy.oauth2 import SpotifyOAuth
 import time
 import socket
+import asyncio
+import json
+from aiohttp import http
 
 import config
 from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, climatedb, init_climate_db
@@ -33,6 +36,7 @@ from joke import get_joke, add_joke
 from quote import list_quotes, add_quote, delete_quote, get_quote
 from climate import guild_data, get_plot
 from logger import logger
+from climate_api import create_web_app
 
 
 
@@ -127,7 +131,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 # Starting and running the bot from here
-def main() -> None:
+async def run_all():
 
     # Create databases if they don't already exist
     if not os.path.isfile(quotedb):
@@ -154,6 +158,13 @@ def main() -> None:
     application.add_handler(CommandHandler("addjoke", coffee.add_joke))
     application.add_handler(CommandHandler("coffee", get_coffee))
 
+    # aiohttp-server
+    web_app = create_web_app()
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8000)
+    await site.start()
+
     # For debugging
     # application.add_handler(CommandHandler("echo", echo))
 
@@ -162,6 +173,9 @@ def main() -> None:
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
+
+def main():
+    asyncio.run(run_all())
 
 
 if __name__ == '__main__':
