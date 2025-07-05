@@ -44,9 +44,9 @@ async def get_coffee_analysis():
     global _last_analysis, _last_analysis_time
 
     now = time.time()
-    # Jos analyysi on tehty alle 3 min sitten, käytetään välimuistia
-    if _last_analysis is not None and (now - _last_analysis_time) < 180:
-        return _last_analysis
+    # Jos analyysi on tehty alle 2 min sitten, käytetään välimuistia
+    if _last_analysis is not None and (now - _last_analysis_time) < 120:
+        return
 
     # Pyydetään uusi kuva
     try:
@@ -65,4 +65,5 @@ async def get_coffee_analysis():
     # Tallennetaan tulos ja aikaleima
     #_last_analysis = result
     _last_analysis_time = now
+    return
     
