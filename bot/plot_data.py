@@ -13,43 +13,25 @@ from matplotlib import dates
 
 
 def plotting():
-    # Set here the desired time range
-    #t_start = '2024-09-17 00:00:00'
-    #t_end = '2024-09-18 00:00:00'
+    #Timezones
+    helsinki_tz = pytz.timezone('Europe/Helsinki')
 
-    # Timerange to be the last 24h
-    t_end = datetime.now(pytz.timezone('Europe/Helsinki'))
-    t_start = t_end + timedelta(days=-1)
+    # Timerange to be the last 24h (in Helsinki time)
+    t_end_local = datetime.now(helsinki_tz)
+    t_start_local = t_end_local - timedelta(days=1)
+
+    # Timerange in UTC
+    t_end_utc = t_end_local.astimezone(pytz.utc)
+    t_start_utc = t_start_local.astimezone(pytz.utc)
+
+    # Format timestamps as string for SQL (UTC strings)
+    t_start_str = t_start_utc.strftime("%Y-%m-%d %H:%M:%S")
+    t_end_str = t_end_utc.strftime("%Y-%m-%d %H:%M:%S")
 
     # Register datetime converter to ensure correct plotting by matplotlib
     pd.plotting.register_matplotlib_converters()
-    
-    """
-    # Find paths to all .csv-files in ./data -folder
-    #csv_file_paths = glob.glob(os.path.join('data', '*.csv'))
 
-    # Combine all csv files to a single data frames
-    #data_files = []
-    #for month_file in csv_file_paths:
-    #    df = pd.read_csv(
-    #        month_file,
-    #        names=(
-    #            'unixtime',
-    #            'temperature',
-    #            'co2',
-    #            'humidity'
-    #        )
-    #    )
-    #    data_files.append(df)
-    #data = pd.concat(data_files, ignore_index=True)
-
-    # Add human-readable timestamps and correct them for our timezone
-    #data['time'] = (pd.to_datetime(data['unixtime'], unit='s')).dt.tz_localize('UTC').dt.tz_convert('Europe/Helsinki')
-
-    # Filter data by selection
-    #data = data[(data.time >= t_start) & (data.time <= t_end)]
-    """
-
+    # SQL query and connection
     conn = sqlite3.connect("climate.db")
 
     query = """
@@ -58,15 +40,12 @@ def plotting():
         WHERE timestamp BETWEEN ? AND ?
         ORDER BY timestamp ASC
     """
-    # Format timestamps as string for SQL
-    t_start_str = t_start.strftime("%Y-%m-%d %H:%M:%S")
-    t_end_str = t_end.strftime("%Y-%m-%d %H:%M:%S")
 
     df = pd.read_sql_query(query, conn, params=(t_start_str, t_end_str))
     conn.close()
 
     # Convert timestamp column to datetime and localize
-    df['time'] = pd.to_datetime(df['timestamp']).dt.tz_localize('UTC').dt.tz_convert('Europe/Helsinki')
+    df['time'] = pd.to_datetime(df['timestamp']).dt.tz_localize('UTC').dt.tz_convert(helsinki_tz)
 
     # Plot data and show results
     ax = plt.subplot(3, 1, 1,)
@@ -81,10 +60,8 @@ def plotting():
     plt.subplot(3, 1, 3, sharex=ax)
     plt.scatter(x=df.time, y=df.humidity, s=2)
     plt.ylabel('Humidity (RH%)')
-
-    helsinki_tz = pytz.timezone('Europe/Helsinki')
-    now_hel = datetime.now(helsinki_tz)
-    plt.suptitle(now_hel.strftime('Kiltis %d.%m.%Y at %H:%M:%S'), fontsize=20)
+    
+    plt.suptitle(t_end_local.strftime('Kiltis %d.%m.%Y at %H:%M:%S'), fontsize=20)
     
     os.makedirs('plots', exist_ok=True)
     # Save the figure as a png to a location
