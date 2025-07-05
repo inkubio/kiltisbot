@@ -96,24 +96,32 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Connect to the Spotify's API to get access to the guild's account data.
-    Then return the current song playing at the guildroom
-    or a message telling that nothing is currently playing.
-    """
     try:
-        scope = "user-read-currently-playing"
-        spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=config.CLIENT_ID_kilta,
-                                                            client_secret=config.CLIENT_SECRET_kilta,
-                                                            redirect_uri=config.REDIRECT_URI,
-                                                            scope=scope,
-                                                            username=config.SP_USERNAME_kilta))
-        track = spotify.current_user_playing_track()
-        await update.message.reply_text('Now playing\n"{}"\nby {}'.format(track["item"]["name"],
-                                                                          track["item"]["artists"][0]["name"]))
-    except:
-        await update.message.reply_text('Nothing is currently playing.')
+        auth_manager = SpotifyOAuth(
+            client_id=config.SPOTIPY_CLIENT_ID,
+            client_secret=config.SPOTIPY_CLIENT_SECRET,
+            redirect_uri=config.REDIRECT_URI,
+            scope="user-read-currently-playing",
+            cache_path=".cache-kiltis"
+        )
 
+        # Aseta refresh token manuaalisesti
+        token_info = auth_manager.refresh_access_token(config.REFRESH_TOKEN)
+        access_token = token_info['access_token']
+
+        spotify = spotipy.Spotify(auth=access_token)
+        track = spotify.current_user_playing_track()
+
+        if track and track["item"]:
+            name = track["item"]["name"]
+            artist = track["item"]["artists"][0]["name"]
+            await update.message.reply_text(f'Now playing\n"{name}"\nby {artist}')
+        else:
+            await update.message.reply_text("Nothing is currently playing.")
+
+    except Exception as e:
+        print(f"Error in music(): {e}")
+        await update.message.reply_text("Error retrieving playback status.")
 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
