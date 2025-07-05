@@ -64,6 +64,7 @@ async def get_coffee_analysis():
 
     # Tallennetaan tulos ja aikaleima
     #_last_analysis = result
+    _last_analysis = True
     _last_analysis_time = now
     return
     
