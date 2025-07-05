@@ -107,21 +107,21 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message_id = reply.message_id
     chat_id = reply.chat.id
 
-    # Get "added_by" from the message being replied to
+    # Get "said_by" from the message being replied to
     if reply.from_user:
         first_name = reply.from_user.first_name or ""
         last_name = reply.from_user.last_name or ""
-        added_by = f"{first_name} {last_name}".strip().lower()
+        said_by = f"{first_name} {last_name}".strip().lower()
     else:
-        added_by = "unknown"
+        said_by = "unknown"
 
-    # Get "said_by" from the person who issued the command
+    # Get "added_by" from the person who issued the command
     if message.from_user:
         sfname = message.from_user.first_name or ""
         slname = message.from_user.last_name or ""
-        said_by = f"{sfname} {slname}".strip().lower()
+        added_by = f"{sfname} {slname}".strip().lower()
     else:
-        said_by = "unknown"
+        added_by = "unknown"
 
     said_date = reply.date.strftime("%Y.%m.%d %H:%M")
     added_date = message.date.strftime("%Y.%m.%d %H:%M")
