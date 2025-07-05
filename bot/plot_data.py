@@ -47,7 +47,7 @@ def plotting():
 
     # Plot data and show results
     ax = plt.subplot(3, 1, 1,)
-    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))    
+    ax.xaxis.set_major_formatter(DateFormatter("%H:%M", tz=ZoneInfo("Europe/Helsinki")))   
     plt.scatter(x=df.time, y=df.co2, s=2)
     plt.ylabel('CO2 (ppm)')
 
