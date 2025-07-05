@@ -1,7 +1,5 @@
 """Simple script for plotting climate sensor data."""
 
-import glob
-import os.path
 import os
 import sqlite3
 import pytz
@@ -10,7 +8,7 @@ import pytz
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import dates
-
+from zoneinfo import ZoneInfo
 
 def plotting():
     #Timezones
@@ -45,11 +43,11 @@ def plotting():
     conn.close()
 
     # Convert timestamp column to datetime and localize
-    df['time'] = pd.to_datetime(df['timestamp']).dt.tz_localize('UTC').dt.tz_convert(helsinki_tz)
+    df['time'] = pd.to_datetime(df['timestamp'], utc=True).dt.tz_convert(ZoneInfo("Europe/Helsinki"))
 
     # Plot data and show results
     ax = plt.subplot(3, 1, 1,)
-    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))    
     plt.scatter(x=df.time, y=df.co2, s=2)
     plt.ylabel('CO2 (ppm)')
 
