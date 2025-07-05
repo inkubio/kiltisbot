@@ -97,32 +97,39 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
+        # Luo auth_manager ilman cachea (tai käytä vain refresh_tokenia)
         auth_manager = SpotifyOAuth(
             client_id=config.SPOTIPY_CLIENT_ID,
             client_secret=config.SPOTIPY_CLIENT_SECRET,
             redirect_uri=config.REDIRECT_URI,
             scope="user-read-currently-playing",
-            cache_path=".cache-kiltis"
+            cache_path=None  # Estetään turha .cache-tiedosto
         )
 
-        # Aseta refresh token manuaalisesti
+        # 🔁 Päivitä access token käyttäen refresh tokenia
         token_info = auth_manager.refresh_access_token(config.REFRESH_TOKEN)
-        access_token = token_info['access_token']
+        access_token = token_info.get("access_token")
 
+        if not access_token:
+            await update.message.reply_text("❌ Failed to retrieve access token.")
+            return
+
+        # 🎵 Hae tiedot nykyisestä kappaleesta
         spotify = spotipy.Spotify(auth=access_token)
         track = spotify.current_user_playing_track()
 
-        if track and track["item"]:
-            name = track["item"]["name"]
-            artist = track["item"]["artists"][0]["name"]
-            await update.message.reply_text(f'Now playing\n"{name}"\nby {artist}')
+        if track and track.get("item"):
+            name = track["item"].get("name", "Unknown title")
+            artist = track["item"]["artists"][0].get("name", "Unknown artist")
+            await update.message.reply_text(f'🎶 Now playing:\n"{name}"\nby {artist}')
         else:
-            await update.message.reply_text("Nothing is currently playing.")
+            await update.message.reply_text("🛑 Nothing is currently playing.")
 
     except Exception as e:
         print(f"Error in music(): {e}")
-        await update.message.reply_text("Error retrieving playback status.")
+        await update.message.reply_text("⚠️ Error retrieving playback status.")
 
+        
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Error handling and logging.
