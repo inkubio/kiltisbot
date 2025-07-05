@@ -12,7 +12,7 @@ init_joke_db = "CREATE TABLE IF NOT EXISTS jokes (joke_text TEXT, tags TEXT, dat
 climatedb = "climate.db"
 init_climate_db = "CREATE TABLE IF NOT EXISTS climate_data (id INTEGER PRIMARY KEY AUTOINCREMENT, co2 REAL, temperature REAL, humidity REAL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)"
 
-def save_climate_data(temperature, humidity, co2=None):
+def save_climate_data(co2, temperature, humidity):
     conn, c = _init_db(climatedb)
     try:
         c.execute("INSERT INTO climate_data (co2, temperature, humidity) VALUES (?, ?, ?)",
