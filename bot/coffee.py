@@ -16,10 +16,11 @@ async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     Returns the current coffee level in the guildroom.
     """
     try:
-        result = await get_coffee_analysis()
-        await update.message.reply_text(f"Coffee level: {result} %")
+        await get_coffee_analysis()
+        with open("kuva.png", "rb") as pic:
+            await update.get_bot().send_photo(chat_id=update.message.chat_id, photo=pic)
     except Exception as e:
-        await update.message.reply_text(f"Error fetching or analyzing coffee image: {e}")
+        await update.message.reply_text(f"Sending photo failed: {e}")
 
 def analyze_coffee(image: Image.Image) -> int:
     """
@@ -57,12 +58,11 @@ async def get_coffee_analysis():
         raise RuntimeError(f"Could not fetch coffee image: {e}")
 
     image = Image.open(io.BytesIO(content))
-
+    image.save("kuva.png")
     # Analysoidaan kuva
-    result = analyze_coffee(image)
+    #result = analyze_coffee(image)
 
     # Tallennetaan tulos ja aikaleima
-    _last_analysis = result
+    #_last_analysis = result
     _last_analysis_time = now
-
-    return result
+    
