@@ -36,7 +36,7 @@ def plotting():
     query = """
         SELECT timestamp, temperature, co2, humidity
         FROM climate_data
-        WHERE timestamp BETWEEN t_start_utc AND t_end_utc
+        WHERE timestamp BETWEEN ? AND ?
         ORDER BY timestamp ASC
     """
 
