@@ -2,15 +2,10 @@
 This bot is a new iteration on the old Kiltisbot made for Inkubio ry.
 Heavily inspired by the old bot but with updated functionality.
 
-Questions or suggestions to
-Aaro Kuusinen
-TG: @apeoskari
-email: kuusinen.aaro@gmail.com
-
-Coffee related questions to:
-Oskari Niemi
-TG: @oskarikalervo
-email: okkixi@gmail.com
+Uptated by:
+Aaro Kuusinen & Oskari Niemi
+TG: @apeoskari / @oskarikalervo
+email: kuusinen.aaro@gmail.com / okkixi@gmail.com
 """
 
 import logging

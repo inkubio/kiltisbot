@@ -8,7 +8,7 @@ import pytz
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
-from matplotlib import dates
+from matplotlib import dates, ticker
 from zoneinfo import ZoneInfo
 
 def plotting():
@@ -36,7 +36,7 @@ def plotting():
     query = """
         SELECT timestamp, temperature, co2, humidity
         FROM climate_data
-        WHERE timestamp BETWEEN ? AND ?
+        WHERE timestamp BETWEEN t_start_utc AND t_end_utc
         ORDER BY timestamp ASC
     """
 
@@ -47,21 +47,35 @@ def plotting():
     df['time'] = pd.to_datetime(df['timestamp'], utc=True).dt.tz_convert(ZoneInfo("Europe/Helsinki"))
 
     # Plot data and show results
-    ax = plt.subplot(3, 1, 1,)
-    ax.xaxis.set_major_formatter(DateFormatter("%H:%M", tz=ZoneInfo("Europe/Helsinki")))   
-    plt.scatter(x=df.time, y=df.co2, s=2)
-    plt.ylabel('CO2 (ppm)')
+    fig, axs = plt.subplots(3, 1)
+    # Format the shared x-axis and other shared information.
+    for ax in axs:
+        ax.xaxis.set_major_formatter(DateFormatter("%H:%M", tz=ZoneInfo("Europe/Helsinki")))
+        ax.xaxis.set_major_locator(dates.HourLocator(interval=3))
+        ax.xaxis.set_minor_locator(dates.HourLocator(interval=1))
+        plt.suptitle(t_end_local.strftime('Last 24h of Kiltis %d.%m.%Y at %H:%M:%S'), fontsize=20)
+        ax.grid(which="major", axis="x", linestyle="-")
+        ax.grid(which="minor", axis="x", linestyle="--")
 
-    plt.subplot(3, 1, 2, sharex=ax)
-    plt.scatter(x=df.time, y=df.temperature, s=2)
-    plt.ylabel('Temp (°C)')
+    ax = axs[0]
+    ax.scatter(x=df.time, y=df.co2, s=2, color='green')
+    ax.set_ylabel('CO2 (ppm)')
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(base=200))
+    ax.grid(which="major", axis="y", linestyle="-")
 
-    plt.subplot(3, 1, 3, sharex=ax)
-    plt.scatter(x=df.time, y=df.humidity, s=2)
-    plt.ylabel('Humidity (RH%)')
+    ax = axs[1]
+    ax.scatter(x=df.time, y=df.temperature, s=2, color='red')
+    ax.set_ylabel('Temp (°C)')
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(base=1))
+    ax.grid(which="major", axis="y", linestyle="-")
+
+    ax = axs[2]
+    ax.scatter(x=df.time, y=df.humidity, s=2, color='blue')
+    ax.set_ylabel('Humidity (RH%)')
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(base=5))
+    ax.grid(which="major", axis="y", linestyle="-")
     
-    plt.suptitle(t_end_local.strftime('Kiltis %d.%m.%Y at %H:%M:%S'), fontsize=20)
-    
+
     os.makedirs('plots', exist_ok=True)
     # Save the figure as a png to a location
     plt.savefig(os.path.join('plots', 'newest.png'))
