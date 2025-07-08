@@ -74,7 +74,6 @@ def plotting():
     ax.set_ylabel('Humidity (RH%)')
     ax.yaxis.set_major_locator(ticker.MultipleLocator(base=5))
     ax.grid(which="major", axis="y", linestyle="-")
-    
 
     os.makedirs('plots', exist_ok=True)
     # Save the figure as a png to a location
