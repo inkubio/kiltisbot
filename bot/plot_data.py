@@ -61,19 +61,25 @@ def plotting():
     ax.scatter(x=df.time, y=df.co2, s=2, color='green')
     ax.set_ylabel('CO2 (ppm)')
     ax.yaxis.set_major_locator(ticker.MultipleLocator(base=200))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(base=100))
     ax.grid(which="major", axis="y", linestyle="-")
+    ax.grid(which="minor", axis="y", linestyle="--")
 
     ax = axs[1]
     ax.scatter(x=df.time, y=df.temperature, s=2, color='red')
     ax.set_ylabel('Temp (°C)')
     ax.yaxis.set_major_locator(ticker.MultipleLocator(base=1))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(base=0.5))
     ax.grid(which="major", axis="y", linestyle="-")
+    ax.grid(which="minor", axis="y", linestyle="--")
 
     ax = axs[2]
     ax.scatter(x=df.time, y=df.humidity, s=2, color='blue')
     ax.set_ylabel('Humidity (RH%)')
     ax.yaxis.set_major_locator(ticker.MultipleLocator(base=5))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(base=2.5))
     ax.grid(which="major", axis="y", linestyle="-")
+    ax.grid(which="minor", axis="y", linestyle="--")
 
     os.makedirs('plots', exist_ok=True)
     # Save the figure as a png to a location
