@@ -3,6 +3,7 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 from logger import logger
+from zoneinfo import ZoneInfo
 
 import plot_data
 from datetime import datetime
@@ -47,7 +48,9 @@ async def people_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """
     ts = _get_climate_data()[3]
     dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
-    formatted_dt = dt.strftime("%d.%m.%Y at %H:%M%S")
+    dt_utc = dt.replace(tzinfo=ZoneInfo("UTC"))
+    dt_helsinki = dt_utc.astimezone(ZoneInfo("Europe/Helsinki"))
+    formatted_dt = dt_helsinki.strftime("%d.%m.%Y at %H:%M")
     await update.message.reply_text("{}\nEstimated occupancy:\n ~{}".format(formatted_dt, _get_ppl()))
 
 
@@ -65,8 +68,10 @@ async def guild_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     """
     temp, co, hum, ts = _get_climate_data()
     dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
-    formatted_dt = dt.strftime("%d.%m.%Y at %H:%M%S")
-    await update.message.reply_text("{}"
+    dt_utc = dt.replace(tzinfo=ZoneInfo("UTC"))
+    dt_helsinki = dt_utc.astimezone(ZoneInfo("Europe/Helsinki"))
+    formatted_dt = dt_helsinki.strftime("%d.%m.%Y at %H:%M")
+    await update.message.reply_text("{}\n"
                                     "CO2: {}ppm\n"
                                     "Temperature: {}°C\n"
                                     "Humidity: {}%\n"
