@@ -11,6 +11,8 @@ jokedb = "joke.db"
 init_joke_db = "CREATE TABLE IF NOT EXISTS jokes (joke_text TEXT, tags TEXT, date_added INT)"
 climatedb = "climate.db"
 init_climate_db = "CREATE TABLE IF NOT EXISTS climate_data (id INTEGER PRIMARY KEY AUTOINCREMENT, co2 REAL, temperature REAL, humidity REAL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)"
+songdb = "song.db"
+init_song_db = "CREATE TABLE IF NOT EXISTS songs (song_name TEXT, song_melody TEXT, song_writer TEXT, song_comp TEXT, song_number TEXT, page_number TEXT, song_lyrics TEXT)"
 
 def save_climate_data(co2, temperature, humidity):
     conn, c = _init_db(climatedb)

@@ -66,7 +66,7 @@ def _search_joke(args):
         return "%{}%".format(string)
 
     conn, c = _init_db(jokedb)
-    results = []
+    results = []>
     try:
         for arg in args:
             ret = c.execute("""

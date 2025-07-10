@@ -28,6 +28,7 @@ from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, cli
 import coffee
 from joke import get_joke, add_joke
 from quote import list_quotes, add_quote, delete_quote, get_quote
+from virpi import add_song, get_song, delete_song
 from climate import guild_data, get_plot, people_count
 from logger import logger
 from climate_api import create_web_app
@@ -36,9 +37,9 @@ from climate_api import create_web_app
 
 def _init_db(database):
     """
-        Initializes database connection
-        Returns cursor to interact with db
-        """
+    Initializes database connection
+    Returns cursor to interact with db
+    """
     connection = sqlite3.connect(database)
     return connection, connection.cursor()
 
@@ -83,7 +84,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                     "Humidity: Solid line every 5% and dashed every 2,5%\n\n"
                                     "/numbers ->\nGet most recent climate data from the guildroom "
                                     "& estimated people count (same as with /stalk)\n\n"
-                                    "/stalk ->\nGet an estimated latest occupancy of the guildroom (RIP kiltiscam :()."
+                                    "/stalk ->\nGet an estimated latest occupancy of the guildroom (RIP kiltiscam)."
                                     " Based on the climate data gathered "
                                     "(currently a simple linear model based on co2 levels)\n\n"
                                     "/addquote ->\nAdd a quote to the bot by replying to a message.\n"
@@ -96,7 +97,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                     "Example: /quote funny\n\n"
                                     "/listquotes ->\nGet a list of quotes from the bot\n"
                                     "(Works only in private chat with the bot)\n\n"
-                                    "/deletequote ->\nDelete a quote from the bot by adding the quite ID. "
+                                    "/deletequote ->\nDelete a quote from the bot by adding the quite ID.\n"
                                     "Get the ID with /listquotes.\n"
                                     "(Works only in private chat with the bot)\n\n"
                                     "/addjoke ->\nAdd a joke to the bot by replying to one or by writing one as an "
@@ -140,6 +141,7 @@ async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         print(f"Error in music(): {e}")
         await update.message.reply_text("⚠️ Error retrieving playback status.")
 
+
 async def fun_fact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         response = requests.get("https://uselessfacts.jsph.pl/api/v2/facts/random?language=en")
@@ -150,7 +152,6 @@ async def fun_fact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         fact = f"Error fetching fact: {e}"
     
     await update.message.reply_text(fact)
-
 
         
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
