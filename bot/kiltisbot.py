@@ -152,7 +152,6 @@ async def fun_fact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(fact)
 
 
-        
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Error handling and logging.

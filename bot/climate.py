@@ -32,7 +32,7 @@ def _get_ppl():
     and then predicts the amount of people at the guildroom.
     The current model is linear and not very accurate, but it'll do for now.
     """
-    co = _get_climate_data()[3]
+    co = _get_climate_data()[1]
     if co != 0:
         humans = round(0.018966699 * int(co) - 8.308014998, 2)
     else:
@@ -45,7 +45,7 @@ async def people_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     Returns a simple value as the expected occupancy of the guildroom.
     The value is counted in the function above.
     """
-    ts = _get_climate_data()[1]
+    ts = _get_climate_data()[3]
     dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
     formatted_dt = dt.strftime("%d.%m.%Y at %H:%M%S")
     await update.message.reply_text("{}\nEstimated occupancy:\n ~{}".format(formatted_dt, _get_ppl()))
