@@ -90,6 +90,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                     "Example: /addquote exampltag1\n"
                                     "(Tags are necessary only with voice messages, "
                                     "but also help finding quotes later)\n\n"
+                                    "/fact ->\nGet a random useless fact.\n\n"
                                     "/quote -> \nGet a quote from the bot. Random if no added a search argument like "
                                     "the quotee, text in quote or tags.\n"
                                     "Example: /quote funny\n\n"
@@ -139,6 +140,18 @@ async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         print(f"Error in music(): {e}")
         await update.message.reply_text("⚠️ Error retrieving playback status.")
 
+async def fun_fact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    try:
+        response = requests.get("https://uselessfacts.jsph.pl/api/v2/facts/random?language=en")
+        response.raise_for_status()
+        data = response.json()
+        fact = data.get("text", "Couldn't find a fact right now.")
+    except Exception as e:
+        fact = f"Error fetching fact: {e}"
+    
+    await update.message.reply_text(fact)
+
+
         
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
@@ -169,17 +182,19 @@ def start_bot():
 
     # On different commands, answer in Telegram accordingly.
     application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("coffee", coffee.get_coffee))
     application.add_handler(CommandHandler("music", music))
-    application.add_handler(CommandHandler("stalk", people_count))
-    application.add_handler(CommandHandler("numbers", guild_data))
     application.add_handler(CommandHandler("plot", get_plot))
+    application.add_handler(CommandHandler("numbers", guild_data))
+    application.add_handler(CommandHandler("stalk", people_count))
+    application.add_handler(CommandHandler("fact", fun_fact))
     application.add_handler(CommandHandler("addquote", add_quote))
     application.add_handler(CommandHandler("quote", get_quote))
     application.add_handler(CommandHandler("listquotes", list_quotes))
     application.add_handler(CommandHandler("deletequote", delete_quote))
-    application.add_handler(CommandHandler("joke", get_joke))
     application.add_handler(CommandHandler("addjoke", add_joke))
-    application.add_handler(CommandHandler("coffee", coffee.get_coffee))
+    application.add_handler(CommandHandler("joke", get_joke))
+    
 
     # For debugging
     # application.add_handler(CommandHandler("echo", echo))
