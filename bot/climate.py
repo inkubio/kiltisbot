@@ -5,24 +5,25 @@ from telegram.ext import ContextTypes
 from logger import logger
 
 import plot_data
+from datetime import datetime
 
 def _get_climate_data():
     try:
         conn = sqlite3.connect("climate.db")
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT temperature, co2, humidity FROM climate_data ORDER BY timestamp DESC LIMIT 1"
+            "SELECT temperature, co2, humidity, timestamp FROM climate_data ORDER BY timestamp DESC LIMIT 1"
         )
         row = cursor.fetchone()
         conn.close()
         if row:
-            # row = (temp, co2, humidity)
-            return [float(row[0]), int(row[1]), float(row[2])]
+            # row = (temp, co2, humidity, timestamp)
+            return [float(row[0]), int(row[1]), float(row[2]), row[3]]
         else:
-            return [0, 0, 0]
+            return [0, 0, 0, None]
     except Exception as e:
         print("DB error:", e)
-        return [0, 0, 0]
+        return [0, 0, 0, None]
 
 
 def _get_ppl():
@@ -31,7 +32,7 @@ def _get_ppl():
     and then predicts the amount of people at the guildroom.
     The current model is linear and not very accurate, but it'll do for now.
     """
-    co = _get_climate_data()[1]
+    co = _get_climate_data()[3]
     if co != 0:
         humans = round(0.018966699 * int(co) - 8.308014998, 2)
     else:
@@ -44,7 +45,10 @@ async def people_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     Returns a simple value as the expected occupancy of the guildroom.
     The value is counted in the function above.
     """
-    await update.message.reply_text("Guildroom occupancy:\n ~{}".format(_get_ppl()))
+    ts = _get_climate_data()[1]
+    dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+    formatted_dt = dt.strftime("%d.%m.%Y at %H:%M%S")
+    await update.message.reply_text("{}\nEstimated occupancy:\n ~{}".format(formatted_dt, _get_ppl()))
 
 
 async def guild_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -53,16 +57,20 @@ async def guild_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     Collected with the gmw90 attached to the wall at the guildroom.
 
     Formatting example:
+    03.05.2025 14:54:12
     CO2: 652 ppm
     Temperature: 22.1 C
     Humidity: 29.6 %
     People: ~9
     """
-    temp, co, hum = _get_climate_data()
-    await update.message.reply_text("CO2: {}ppm\n"
+    temp, co, hum, ts = _get_climate_data()
+    dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+    formatted_dt = dt.strftime("%d.%m.%Y at %H:%M%S")
+    await update.message.reply_text("{}"
+                                    "CO2: {}ppm\n"
                                     "Temperature: {}°C\n"
                                     "Humidity: {}%\n"
-                                    "People: ~{}\n".format(co, temp, hum, _get_ppl()))
+                                    "People: ~{}\n".format(formatted_dt, co, temp, hum, _get_ppl()))
 
 
 async def get_plot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
