@@ -1,14 +1,16 @@
 import random
 import sqlite3
 import logging
+from typing import Any, Dict, List
 from telegram import Update
+from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 import config
 from db_utils import songdb, _init_db
 from logger import logger
 
 
-def _get_message_args(string):
+def _get_add_args(string):
     """
     Returns all args from input string separated with spaces as a string
     """
@@ -35,11 +37,16 @@ def _get_message_args(string):
         return None
 
 
-def _search_song(args):
+def _get_message_args(string):
     """
-    Fetches a random possible meaning of search term
-    (only text, name and text)
-    one arg at a time. For getting songs.
+    Returns all args from input string separated with spaces as a string
+    """
+    return " ".join([tag for tag in string.split() if tag[0] != '/'])
+
+
+def _search_song(args) -> List[Dict[str, Any]]:
+    """
+    Fetches possible matches based on song name and lyrics.
     """
     def like(string):
         return "%{}%".format(string)
@@ -66,8 +73,8 @@ def _search_song(args):
     finally:
         conn.close()
 
-    id = random.choice(results)[0] if results else None
-    return id
+    matches = results if results else None
+    return matches
 
 
 def _random_song():
@@ -111,7 +118,7 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                                  "Lyrics:\n...")
         return
 
-    args = _get_message_args(raw_text)
+    args = _get_add_args(raw_text)
     if not args:
         await message.reply_text("Invalid song format. Please include:\n"
                                  "Title: ...\n"
@@ -140,6 +147,55 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.close()
 
 
+async def send_long_message(update: Update, text: str, parse_mode=ParseMode.HTML) -> None:
+    """
+    Send a message, splitting it if it's too long.
+    ps. thank you FK
+    """
+    max_length = 4000  # Leave some buffer under Telegram's 4096 limit
+
+    if len(text) <= max_length:
+        await update.message.reply_text(
+            text, parse_mode=parse_mode, disable_web_page_preview=True
+        )
+        return
+
+    # Split into chunks
+    chunks = []
+    remaining = text
+
+    while len(remaining) > max_length:
+        # Find a good place to split (prefer line breaks)
+        chunk = remaining[:max_length]
+        last_newline = chunk.rfind("\n\n")  # Look for paragraph breaks first
+        if last_newline == -1:
+            last_newline = chunk.rfind("\n")  # Then any line break
+
+        if last_newline > max_length - 200:  # If we found a good break point
+            split_point = last_newline
+        else:
+            split_point = max_length
+
+        chunks.append(remaining[:split_point])
+        remaining = remaining[split_point:].lstrip()
+
+    if remaining:
+        chunks.append(remaining)
+
+    # Send each chunk
+    for i, chunk in enumerate(chunks):
+        if i == 0:
+            # First chunk - send as reply
+            await update.message.reply_text(
+                chunk, parse_mode=parse_mode, disable_web_page_preview=True
+            )
+        else:
+            # Subsequent chunks - send as follow-up
+            await update.effective_chat.send_message(
+                chunk, parse_mode=parse_mode, disable_web_page_preview=True
+            )
+
+
 async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Forwards a quote to a chat.
@@ -151,17 +207,59 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message.text.lower()
     chat_id = update.message.chat.id
 
-    arglist = _get_message_args(update.message.text).split()
-    if arglist:
-        song = _search_song(arglist)
-    else:
-        song = _random_song()
+    if update.message.chat.type != "private":
+        return
+    conn, c = _init_db(songdb)
 
-    if song:
-        await context.bot.forwardMessage(chat_id=chat_id, from_chat_id=chat_id, message_id=song)
+    arglist = _get_message_args(update.message.text).split()
+    match_songs = _search_song(arglist)
+
+    if not match_songs:
+        await update.message.reply_text(
+            f"🔍 No results for: <b>{arglist}</b>\n\n"
+            "Try different search terms!",
+            parse_mode=ParseMode.HTML,
+        )
+        return
+
+    ret = c.execute("""
+                            SELECT song_name, song_melody, song_writers, song_composers, song_song_number, song_page_number, song_lyrics)
+                            FROM songs
+                            WHERE song_name = ?
+                            """,
+                    (match_songs[0],)).fetchall()
+
+    if len(match_songs) == 1:
+        name = ret[0][0]
+        melody = ret[0][1]
+        writers = ret[0][2]
+        composers = ret[0][3]
+        song_number = ret[0][4]
+        page_number = ret[0][5]
+        lyrics = ret[0][6]
+
+        text = f"🎵 <b>{name}</b>\n"
+        metadata = []
+        if melody:
+            metadata.append(f"🎼 Mel: {melody}")
+        if writers:
+            metadata.append(f"✍️ San: {writers}")
+        if composers:
+            metadata.append(f"🎹 Sov: {composers}")
+        if song_number:
+            metadata.append(f"Laulu nro {melody}")
+        if page_number:
+            metadata.append(f"Sivu {page_number}")
+
+        if metadata:
+            text += "\n" + "\n".join(metadata) + "\n"
+
+        text += f"\n{lyrics}"
+        await send_long_message(update, text)
     else:
-        await update.message.reply_text("Can't find a song",
-                        reply_to_message_id=update.message.message_id)
+        text = f"🎵 <b>Found {len(match_songs)} songs for the search:</b> {arglist}"
+        for i, song in enumerate(ret):
+
 
 
 async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
