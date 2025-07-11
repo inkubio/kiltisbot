@@ -185,9 +185,13 @@ def format_event(event):
             time_str = f"{start_dt.strftime('%a, %b %d')} - {end_dt.strftime('%a, %b %d')} (all day)"
 
     summary = event.get('summary', 'No title')
+    
     location = event.get('location', '')
+    location_text = ""
+    if location:
+        location_text = f"\n📍 {location.split(',')[0]}"
 
-    return f"📅 <b>{summary}</b>\n🕒 {time_str}\n📍 {location}".strip()
+    return f"📅 <b>{summary}</b>\n🕒 {time_str}{location_text}".strip()
 
 async def events(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = f"https://www.googleapis.com/calendar/v3/calendars/{config.CALENDAR_ID}/events"
