@@ -15,6 +15,8 @@ import requests
 import os
 import random
 import spotipy
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 from spotipy.oauth2 import SpotifyOAuth
@@ -33,7 +35,9 @@ from logger import logger
 from climate_api import create_web_app
 from trivia import trivia
 
-
+GOOGLE_CALENDAR_API_KEY = "AIzaSyBHi1Wmyer2F6uyFS7fdTQiVAOYEEbr0ew"
+CALENDAR_ID = "c_971e17b8671a195c1685202eb6c52d54bf2617755521c0b832b8960c598756bf@group.calendar.google.com"
+LOCAL_TZ = ZoneInfo("Europe/Helsinki")
 
 def _init_db(database):
     """
@@ -77,6 +81,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await update.message.reply_text("Commands:\n\n"
                                     "/help ->\nThis message\n\n"
                                     "/coffee ->\nGet a picture of the coffee pot at the guildroom.\n\n"
+                                    "/events ->\nGet future guild events.\n\n"
                                     "/music ->\nWhat music is currently playing at the guildroom.\n\n"
                                     "/plot ->\nDraw a plot from the climate data (last 24h)\n"
                                     "CO2: Solid line every 200ppm and dashed every 100ppm\n"
@@ -153,6 +158,65 @@ async def fun_fact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     await update.message.reply_text(fact)
 
+def parse_event_time(timestr):
+    """Parses ISO time string with or without timezone."""
+    if 'T' in timestr:
+        # Time specified, likely with UTC offset
+        return datetime.fromisoformat(timestr).astimezone(LOCAL_TZ)
+    else:
+        # All-day event, date only
+        return datetime.fromisoformat(timestr).replace(tzinfo=LOCAL_TZ)
+
+def format_event(event):
+    start_raw = event['start'].get('dateTime', event['start'].get('date'))
+    end_raw = event['end'].get('dateTime', event['end'].get('date'))
+
+    start_dt = parse_event_time(start_raw)
+    end_dt = parse_event_time(end_raw)
+    same_day = start_dt.date() == end_dt.date()
+
+    if 'dateTime' in event['start']:
+        # Timed event
+        time_str = (f"{start_dt.strftime('%a, %b %d %H:%M')} - "
+                    f"{end_dt.strftime('%H:%M') if same_day else end_dt.strftime('%a, %b %d %H:%M')}")
+    else:
+        # All-day event
+        if same_day:
+            time_str = start_dt.strftime('%a, %b %d (all day)')
+        else:
+            time_str = f"{start_dt.strftime('%a, %b %d')} - {end_dt.strftime('%a, %b %d')} (all day)"
+
+    summary = event.get('summary', 'No title')
+    location = event.get('location', '')
+
+    return f"📅 <b>{summary}</b>\n🕒 {time_str}\n📍 {location}".strip()
+
+async def events(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    url = f"https://www.googleapis.com/calendar/v3/calendars/{CALENDAR_ID}/events"
+    now = datetime.utcnow().isoformat() + 'Z'
+    params = {
+        'key': GOOGLE_CALENDAR_API_KEY,
+        'timeMin': now,
+        'maxResults': 5,
+        'orderBy': 'startTime',
+        'singleEvents': True
+    }
+
+    try:
+        resp = requests.get(url, params=params)
+        resp.raise_for_status()
+        items = resp.json().get("items", [])
+
+        if not items:
+            await update.message.reply_text("No upcoming events found.")
+            return
+
+        event_texts = [format_event(item) for item in items]
+        message = "\n\n".join(event_texts)
+        await update.message.reply_text(message, parse_mode="HTML")
+
+    except Exception as e:
+        await update.message.reply_text(f"⚠️ Failed to fetch events: {e}")
 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
@@ -184,6 +248,7 @@ def start_bot():
     # On different commands, answer in Telegram accordingly.
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("coffee", coffee.get_coffee))
+    application.add_handler(CommandHandler("events", events))
     application.add_handler(CommandHandler("music", music))
     application.add_handler(CommandHandler("plot", get_plot))
     application.add_handler(CommandHandler("numbers", guild_data))
