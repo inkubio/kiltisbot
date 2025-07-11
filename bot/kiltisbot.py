@@ -199,7 +199,7 @@ async def events(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'timeMin': now,
         'maxResults': 5,
         'orderBy': 'startTime',
-        'singleEvents': True
+        'singleEvents': 'true'
     }
 
     try:
