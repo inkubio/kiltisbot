@@ -174,7 +174,7 @@ def format_event(event):
     end_dt = parse_event_time(end_raw)
     same_day = start_dt.date() == end_dt.date()
 
-    today = datetime.now(helsinki_tz).date()
+    today = datetime.now(LOCAL_TZ).date()
     tomorrow = today + timedelta(days=1)
 
     if start_dt.date() == today:
@@ -194,7 +194,7 @@ def format_event(event):
             time_str = f"{day_label} (all day)"
         else:
             time_str = f"{day_label} - {end_dt.strftime('%a, %b %d')} (all day)"
-            
+
     summary = event.get('summary', 'No title')
     
     location = event.get('location', '')
