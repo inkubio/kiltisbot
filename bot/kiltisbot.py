@@ -15,6 +15,7 @@ import requests
 import os
 import random
 import spotipy
+import html
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from telegram import ForceReply, Update
