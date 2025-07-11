@@ -189,7 +189,7 @@ def format_event(event):
     location = event.get('location', '')
     location_text = ""
     if location:
-        location_text = f"\n📍 {location.split(',')[0]}"
+        location_text = f"\n📍 {html.escape(location)}"
 
     return f"📅 <b>{summary}</b>\n🕒 {time_str}{location_text}".strip()
 
