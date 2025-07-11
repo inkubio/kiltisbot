@@ -31,6 +31,7 @@ from quote import list_quotes, add_quote, delete_quote, get_quote
 from climate import guild_data, get_plot, people_count
 from logger import logger
 from climate_api import create_web_app
+from trivia import trivia
 
 
 
@@ -91,6 +92,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                     "(Tags are necessary only with voice messages, "
                                     "but also help finding quotes later)\n\n"
                                     "/fact ->\nGet a random useless fact.\n\n"
+                                    "/trivia ->\nGet a random trivia quiz.\n\n"
                                     "/quote -> \nGet a quote from the bot. Random if no added a search argument like "
                                     "the quotee, text in quote or tags.\n"
                                     "Example: /quote funny\n\n"
@@ -187,6 +189,7 @@ def start_bot():
     application.add_handler(CommandHandler("numbers", guild_data))
     application.add_handler(CommandHandler("stalk", people_count))
     application.add_handler(CommandHandler("fact", fun_fact))
+    application.add_handler(CommandHandler("trivia", trivia))
     application.add_handler(CommandHandler("addquote", add_quote))
     application.add_handler(CommandHandler("quote", get_quote))
     application.add_handler(CommandHandler("listquotes", list_quotes))
