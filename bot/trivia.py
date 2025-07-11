@@ -28,6 +28,5 @@ async def trivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
         options=options,
         type=Poll.QUIZ,
         correct_option_id=correct_index,
-        is_anonymous=False,
-        explanation="Hmmm..."
+        is_anonymous=False
     )
