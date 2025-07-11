@@ -9,31 +9,48 @@ import config
 from db_utils import songdb, _init_db
 from logger import logger
 
+"""
+Implementation of songbook database and it's usage trhough telegram.
+Huge thanks to Guild of Physics and their Fiisubot for inspiring and helping with this! <3
+"""
 
 def _get_add_args(string):
     """
-    Returns all args from input string separated with spaces as a string
+    Returns a list of specified arguments given by the user. Arguments are metadata about a song.
     """
     try:
         lines = string.strip().splitlines()
-        title_line = next(line for line in lines if line.startswith("Title:"))
-        melody_line = next(line for line in lines if line.startswith("Melody:"))
-        writers_line = next(line for line in lines if line.startswith("Writers:"))
-        composers_line = next(line for line in lines if line.startswith("Composers:"))
-        song_number_line = next(line for line in lines if line.startswith("Song number:"))
-        page_number_line = next(line for line in lines if line.startswith("Page number:"))
-        lyrics_start = lines.index("Lyrics:") + 1
-        lyrics = "\n".join(lines[lyrics_start:])
 
-        title = title_line.replace("Title:", "").strip()
-        melody = melody_line.replace("Melody:", "").strip()
-        writers = writers_line.replace("Writers:", "").strip()
-        composers = composers_line.replace("Composers:", "").strip()
-        song_number = song_number_line.replace("Song number:", "").strip()
-        page_number = page_number_line.replace("Page number:", "").strip()
+        name = ""
+        melody = ""
+        writers = ""
+        composers = ""
+        song_number = ""
+        page_number = ""
+        lyrics = ""
 
-        return title, melody, writers, composers, song_number, page_number, lyrics
-    except Exception as e:
+        for i, line in enumerate(lines):
+            if line.lower().startswith("Name:"):
+                name = line.split(":", 1)[1].strip()
+            elif line.lower().startswith("Melody:"):
+                melody = line.split(":", 1)[1].strip()
+            elif line.lower().startswith("Writers:"):
+                writers = line.split(":", 1)[1].strip()
+            elif line.lower().startswith("Composers:"):
+                composers = line.split(":", 1)[1].strip()
+            elif line.lower().startswith("Song number:"):
+                song_number = line.split(":", 1)[1].strip()
+            elif line.lower().startswith("Page number:"):
+                page_number = line.split(":", 1)[1].strip()
+            elif line.lower().startswith("Lyrics:"):
+                lyrics = "\n".join(lines[i + 1:]).strip()
+                break  # Lyrics is last section
+
+        if not name or not lyrics:
+            return None  # these are mandatory
+
+        return name, melody, writers, lyrics, composers, song_number, page_number
+    except Exception:
         return None
 
 
@@ -44,7 +61,7 @@ def _get_message_args(string):
     return " ".join([tag for tag in string.split() if tag[0] != '/'])
 
 
-def _search_song(args) -> List[Dict[str, Any]]:
+def _search_song(args):
     """
     Fetches possible matches based on song name and lyrics.
     """
@@ -52,57 +69,44 @@ def _search_song(args) -> List[Dict[str, Any]]:
         return "%{}%".format(string)
 
     conn, c = _init_db(songdb)
-    results = []
+    seen_songs = set()
+    results = set()
+
     try:
         for arg in args:
-            ret = c.execute("""
+            name_matches = c.execute("""
                             SELECT song_name
                             FROM songs
-                            AND song_name LIKE :arg
+                            WHERE song_name LIKE :arg
                             """,
                              {"arg": like(arg)}
                              ).fetchall()
-            ret += c.execute("""
+            lyric_matches = c.execute("""
                              SELECT song_name
                              FROM songs
-                             AND song_text LIKE :arg
+                             WHERE song_lyrics LIKE :arg
                              """,
                              {"arg": like(arg)}
                              ).fetchall()
-            results.extend(ret)
+            for row in name_matches + lyric_matches:
+                results.add(row[0])
     finally:
         conn.close()
 
-    matches = results if results else None
+    matches = sorted(results) if results else None
     return matches
-
-
-def _random_song():
-    """
-    Returns a random quote from the same chat as the request
-    """
-    conn, c = _init_db(songdb)
-    ret = None
-    try:
-        ret = c.execute("""
-                        SELECT song_name
-                        FROM songs
-                        ORDER BY RANDOM() LIMIT 1
-                        """).fetchone()
-    finally:
-        conn.close()
-    return ret[0] if ret else None
 
 
 async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Adds a quote from a telegram chat to a chat-specific database.
-    User needs to reply to a message he wants to quote with the message
-    '/addquote'
+    Adds a song from a private chat with a specified allowed user and adds it to a database.
     """
     if update.message.chat.type != "private":
         return
-    conn, c = _init_db(songdb)
+
+    if update.message.from_user.id not in config.SONG_MASTERS:
+        await update.message.reply_text("Sorry, not allowed to do that ;)")
+        return
 
     message = update.message
     raw_text = message.text
@@ -128,8 +132,12 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                                  "Song number: ...\n"
                                  "Page number: ...\n"
                                  "Lyrics:\n...")
+        return
 
-    title, melody, writers, composers, song_number, page_number, lyrics = args
+    # Unpack and optionally clean up args
+    title, melody, writers, composers, song_number, page_number, lyrics = (
+        field.strip() if field else "" for field in args
+    )
 
     conn, c = _init_db(songdb)
     try:
@@ -139,8 +147,8 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(f"🎵 Song '{title}' added.")
     except Exception as e:
         logger.error("Error while adding song: %s", e)
-        if str(e).startswith("UNIQUE constraint failed"):
-            await update.message.reply_text("Song already added.")
+        if "UNIQUE constraint failed" in str(e):
+            await update.message.reply_text("Song already exists.")
         else:
             await update.message.reply_text(f"Error while adding song: {e}")
     finally:
@@ -198,106 +206,135 @@ async def send_long_message(update: Update, text: str, parse_mode=ParseMode.HTML
 
 async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Forwards a quote to a chat.
-    If there are words after '/quote', these are considered
-    search arguments and are used for limiting the search and
-    identifying quotes from the db based on the quotee, text
-    in quote or tags.
+    Gets a song from the database and sends it to a chat if exact match is found.
+    If not, it sends a truncated list of search results.
     """
-    msg = update.message.text.lower()
-    chat_id = update.message.chat.id
-
-    if update.message.chat.type != "private":
+    msg = update.message.text
+    if not msg:
         return
+
     conn, c = _init_db(songdb)
 
-    arglist = _get_message_args(update.message.text).split()
-    match_songs = _search_song(arglist)
+    try:
+        arglist = _get_message_args(msg).split()
+        if not arglist:
+            await update.message.reply_text("❗Please include search terms.")
+            return
 
-    if not match_songs:
-        await update.message.reply_text(
-            f"🔍 No results for: <b>{arglist}</b>\n\n"
-            "Try different search terms!",
-            parse_mode=ParseMode.HTML,
-        )
-        return
+        match_songs = _search_song(arglist)
+        if not match_songs:
+            await update.message.reply_text(
+                f"🔍 No results for: <b>{arglist}</b>\n\n"
+                "Try different search terms!",
+                parse_mode=ParseMode.HTML,
+            )
+            return
 
-    ret = c.execute("""
-                            SELECT song_name, song_melody, song_writers, song_composers, song_song_number, song_page_number, song_lyrics)
+        placeholders = ','.join('?' for _ in match_songs)
+        ret = c.execute(f"""
+                            SELECT song_name, song_melody, song_writers, song_composers, song_song_number, song_page_number, song_lyrics
                             FROM songs
-                            WHERE song_name = ?
-                            """,
-                    (match_songs[0],)).fetchall()
+                            WHERE song_name IN ({placeholders})
+                        """, match_songs).fetchall()
 
-    if len(match_songs) == 1:
-        name = ret[0][0]
-        melody = ret[0][1]
-        writers = ret[0][2]
-        composers = ret[0][3]
-        song_number = ret[0][4]
-        page_number = ret[0][5]
-        lyrics = ret[0][6]
+        if len(match_songs) == 1 and ret:
+            name, melody, writers, composers, song_number, page_number, lyrics = ret[0]
 
-        text = f"🎵 <b>{name}</b>\n"
-        metadata = []
-        if melody:
-            metadata.append(f"🎼 Mel: {melody}")
-        if writers:
-            metadata.append(f"✍️ San: {writers}")
-        if composers:
-            metadata.append(f"🎹 Sov: {composers}")
-        if song_number:
-            metadata.append(f"Laulu nro {melody}")
-        if page_number:
-            metadata.append(f"Sivu {page_number}")
+            text = f"🎵 <b>{name}</b>\n"
 
-        if metadata:
-            text += "\n" + "\n".join(metadata) + "\n"
+            metadata = []
+            if melody:
+                metadata.append(f"🎼 Mel: {melody}")
+            if writers:
+                metadata.append(f"✍️ San: {writers}")
+            if composers:
+                metadata.append(f"🎹 Sov: {composers}")
+            if song_number:
+                metadata.append(f"Laulu nro {song_number}")
+            if page_number:
+                metadata.append(f"Sivu {page_number}")
 
-        text += f"\n{lyrics}"
-        await send_long_message(update, text)
-    else:
-        text = f"🎵 <b>Found {len(match_songs)} songs for the search:</b> {arglist}"
-        for i, song in enumerate(ret):
+            if metadata:
+                text += "\n" + "\n".join(metadata) + "\n"
 
+            text += f"\n{lyrics}"
+            await send_long_message(update, text)
+
+        else:
+            text = f"🎵 <b>Found {len(match_songs)} songs for the search:</b> {' '.join(arglist)}"
+
+            for i, song in enumerate(ret, 1):
+                name = song[0]
+                melody = song[1]
+                lyrics = song[6]
+
+                metadata_preview = []
+                if melody:
+                    metadata_preview.append(f"Säv. {melody}")
+
+                lyrics_preview = lyrics.split("\n")[0] if lyrics else "Ei saatavilla :("
+                if len(lyrics) > 40:
+                    lyrics_preview = lyrics_preview[:40] + "..."
+
+                text += f"{i}. <b>{name}</b>\n"
+
+                if metadata_preview:
+                    escaped_metadata = " | ".join(metadata_preview)
+                    text += f"   📄 <i>{escaped_metadata}</i>\n"
+
+                text += f"   🎵 <i>{lyrics_preview}</i>\n\n"
+
+            text += "💡 Tarkenna hakua saadaksesi koko laulun!"
+
+            await send_long_message(update, text)
+    finally:
+        conn.close()
 
 
 async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Deletes a quote by same user requesting deletion
+    Allows speicied users to delete songs from the database in private chat.
     """
+
     if update.message.chat.type != "private":
         return
 
-    conn, c = _init_db(quotedb)
+    if update.message.from_user.id not in config.SONG_MASTERS:
+        await update.message.reply_text("Sorry, not allowed to do that ;)")
+        return
+
+    msg = update.message.text
+    query = _get_message_args(msg).strip()
+
+    if not query:
+        await update.message.reply_text("Please provide a song name to delete.")
+        return
+
+    matches = _search_song(query.split())
+    if not matches:
+        await update.message.reply_text(f"🔍 No matching song found for '{query}'.")
+        return
+
+    conn, c = _init_db(songdb)
     try:
-        args = update.message.text.strip().split()
-        if len(args) < 2 or not args[1].isdigit():
-            await update.message.reply_text(
-                "How to use: /deletequote [quote ID]\n"
-                "You can get quote ID for your messages by using /listquotes"
-            )
-            return
-
-        target_id = int(args[1])
-        user = update.message.chat.first_name.lower() + " " + update.message.chat.last_name.lower()
-
+        # Try deleting exact match first
         deleted = c.execute("""
-            DELETE FROM quotes
-            WHERE said_by = ?
-            AND message_id = ?
-        """, (user, target_id))
-        conn.commit()
-
-        if deleted.rowcount > 0:
-            await update.message.reply_text("Quote removed.")
+                            DELETE FROM songs 
+                            WHERE song_name = ?
+                            """, (query,)).rowcount
+        if deleted:
+            conn.commit()
+            await update.message.reply_text(f"🗑️ Song '{query}' deleted.")
         else:
+            # If no exact match, suggest alternatives
+            options = "\n".join(f"• {name}" for name in matches[:5])
             await update.message.reply_text(
-                "Quote was not found with that ID or it's not your quote.\n"
-                "Check ID with /listquotes."
+                f"⚠️ No exact match for '{query}'.\n"
+                f"Did you mean one of these?\n\n{options}\n\n"
+                f"Please retry with the exact title."
             )
-
     except Exception as e:
-        await update.message.reply_text(f"Error removing quote: {e}")
+        logger.error("Error while deleting song: %s", e)
+        await update.message.reply_text("❌ An error occurred while deleting the song.")
     finally:
         conn.close()

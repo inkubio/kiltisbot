@@ -35,6 +35,7 @@ from climate import guild_data, get_plot, people_count
 from logger import logger
 from climate_api import create_web_app
 from trivia import trivia
+from virpi import get_song, add_song, delete_song
 
 LOCAL_TZ = ZoneInfo("Europe/Helsinki")
 
@@ -274,6 +275,9 @@ def start_bot():
     application.add_handler(CommandHandler("deletequote", delete_quote))
     application.add_handler(CommandHandler("addjoke", add_joke))
     application.add_handler(CommandHandler("joke", get_joke))
+    application.add_handler(CommandHandler("virpi", get_song))
+    application.add_handler(CommandHandler("addsong", add_song))
+    application.add_handler(CommandHandler("deletesong", delete_song))
     
 
     # For debugging
