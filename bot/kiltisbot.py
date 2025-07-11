@@ -174,17 +174,27 @@ def format_event(event):
     end_dt = parse_event_time(end_raw)
     same_day = start_dt.date() == end_dt.date()
 
+    today = datetime.now(helsinki_tz).date()
+    tomorrow = today + timedelta(days=1)
+
+    if start_dt.date() == today:
+        day_label = "Today"
+    elif start_dt.date() == tomorrow:
+        day_label = "Tomorrow"
+    else:
+        day_label = start_dt.strftime('%a, %b %d')
+
     if 'dateTime' in event['start']:
         # Timed event
-        time_str = (f"{start_dt.strftime('%a, %b %d %H:%M')} - "
+        time_str = (f"{day_label} {start_dt.strftime('%H:%M')} - "
                     f"{end_dt.strftime('%H:%M') if same_day else end_dt.strftime('%a, %b %d %H:%M')}")
     else:
         # All-day event
         if same_day:
-            time_str = start_dt.strftime('%a, %b %d (all day)')
+            time_str = f"{day_label} (all day)"
         else:
-            time_str = f"{start_dt.strftime('%a, %b %d')} - {end_dt.strftime('%a, %b %d')} (all day)"
-
+            time_str = f"{day_label} - {end_dt.strftime('%a, %b %d')} (all day)"
+            
     summary = event.get('summary', 'No title')
     
     location = event.get('location', '')
