@@ -190,10 +190,10 @@ def format_event(event):
     return f"📅 <b>{summary}</b>\n🕒 {time_str}\n📍 {location}".strip()
 
 async def events(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    url = f"https://www.googleapis.com/calendar/v3/calendars/{CALENDAR_ID}/events"
+    url = f"https://www.googleapis.com/calendar/v3/calendars/{config.CALENDAR_ID}/events"
     now = datetime.utcnow().isoformat() + 'Z'
     params = {
-        'key': GOOGLE_CALENDAR_API_KEY,
+        'key': config.GOOGLE_CALENDAR_API_KEY,
         'timeMin': now,
         'maxResults': 5,
         'orderBy': 'startTime',
