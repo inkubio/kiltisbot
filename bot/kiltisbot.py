@@ -35,8 +35,6 @@ from logger import logger
 from climate_api import create_web_app
 from trivia import trivia
 
-GOOGLE_CALENDAR_API_KEY = "AIzaSyBHi1Wmyer2F6uyFS7fdTQiVAOYEEbr0ew"
-CALENDAR_ID = "c_971e17b8671a195c1685202eb6c52d54bf2617755521c0b832b8960c598756bf@group.calendar.google.com"
 LOCAL_TZ = ZoneInfo("Europe/Helsinki")
 
 def _init_db(database):
