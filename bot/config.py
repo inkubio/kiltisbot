@@ -1,6 +1,7 @@
 import os
 import sqlite3
 from dotenv import load_dotenv
+import json
 
 load_dotenv()  # Lataa .env-tiedoston muuttujat
 
@@ -14,4 +15,4 @@ FLASK_URL = os.getenv("FLASK_URL")
 API_KEY = os.getenv("API_KEY")
 GOOGLE_CALENDAR_API_KEY = os.getenv("GOOGLE_CALENDAR_API_KEY")
 CALENDAR_ID = os.getenv("CALENDAR_ID")
-SONG_MASTERS = os.getenv("SONG_MASTERS")
+SONG_MASTERS = json.loads(os.environ['SONG_MASTERS'])
