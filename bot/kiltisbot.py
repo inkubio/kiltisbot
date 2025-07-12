@@ -183,7 +183,7 @@ def format_event(event):
     elif start_dt.date() == tomorrow:
         day_label = "Tomorrow"
     else:
-        day_label = start_dt.strftime('%a, %b, %d')
+        day_label = start_dt.strftime('%a, %b %d')
 
     if 'dateTime' in event['start']:
         # Timed event
