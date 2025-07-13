@@ -1,6 +1,7 @@
 """
 This bot is a new iteration on the old Kiltisbot made for Inkubio ry.
 Heavily inspired by the old bot but with updated functionality.
+Thanks to Joonas Palosuo for the old code <3 !!!
 
 Uptated by:
 Aaro Kuusinen & Oskari Niemi
@@ -39,11 +40,13 @@ from virpi import get_song, add_song, delete_song
 
 LOCAL_TZ = ZoneInfo("Europe/Helsinki")
 
+
+# Käytetääks tätä vai tota mikä on tuol db_utils.py filus
 def _init_db(database):
     """
-        Initializes database connection
-        Returns cursor to interact with db
-        """
+    Initializes database connection
+    Returns cursor to interact with db
+    """
     connection = sqlite3.connect(database)
     return connection, connection.cursor()
 
@@ -67,9 +70,9 @@ def _create_db(database, init_query):
 
 
 """
-Define command a few command handlers and how they are used.
+Define a few command handlers and how they are used.
 These will define the actual functionality of the bot and can be used by the user. 
-Commands also in quote.py, joke.py, coffee.py and climate.py
+Commands also in quote.py, joke.py, coffee.py, climate.py, plot.py, trivia.py and virpi.py
 """
 
 
@@ -78,42 +81,84 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     Returns a help message with instructions on how to use the bot.
     Should be get up to date with the functionalities of the bot.
     """
-    await update.message.reply_text("Commands:\n\n"
-                                    "/help ->\nThis message\n\n"
-                                    "/coffee ->\nGet a picture of the coffee pot at the guildroom.\n\n"
-                                    "/events ->\nGet future guild events.\n\n"
-                                    "/music ->\nWhat music is currently playing at the guildroom.\n\n"
-                                    "/plot ->\nDraw a plot from the climate data (last 24h)\n"
-                                    "CO2: Solid line every 200ppm and dashed every 100ppm\n"
-                                    "Temperature: Solid line every degree and dashed every half a degree\n"
-                                    "Humidity: Solid line every 5% and dashed every 2,5%\n\n"
-                                    "/numbers ->\nGet most recent climate data from the guildroom "
-                                    "& estimated people count (same as with /stalk)\n\n"
-                                    "/stalk ->\nGet an estimated latest occupancy of the guildroom (RIP kiltiscam :()."
-                                    " Based on the climate data gathered "
-                                    "(currently a simple linear model based on co2 levels)\n\n"
-                                    "/addquote ->\nAdd a quote to the bot by replying to a message.\n"
-                                    "Example: /addquote exampltag1\n"
-                                    "(Tags are necessary only with voice messages, "
-                                    "but also help finding quotes later)\n\n"
-                                    "/fact ->\nGet a random useless fact.\n\n"
-                                    "/trivia ->\nGet a random trivia quiz.\n\n"
-                                    "/quote -> \nGet a quote from the bot. Random if no added a search argument like "
+    await update.message.reply_text("<u><b>Commands & Instructions:</b></u>\n\n"
+                                    ""
+                                    "/help ->\n"
+                                    "This message.\n\n"
+                                    ""
+                                    "/coffee ->\n"
+                                    "Get a picture of the coffee pot at the guildroom.\n\n"
+                                    ""
+                                    "/events ->\n"
+                                    "Get future guild events.\n\n"
+                                    ""
+                                    "/music ->\n"
+                                    "What music is currently playing at the guildroom.\n\n"
+                                    ""
+                                    "/virpi ->\n"
+                                    "Search for a song from the latest VIRPI based on the name or lyrics.\n"
+                                    "If no exact match found, the best search results are shown.\n"
+                                    "Then try again."
+                                    "<b>Example:</b> /virpi hyvät ystävät"
+                                    ""
+                                    "/plot ->\n"
+                                    "Draws a plot from the climate data <i>(last 24h)</i>\n"
+                                    "<b>CO2:</b> Solid line every 200ppm and dashed every 100ppm\n"
+                                    "<b>Temp:</b> Solid line every 1°C and dashed every 0,5°C\n"
+                                    "<b>Humid:</b> Solid line every 5% and dashed every 2,5%\n\n"
+                                    ""
+                                    "/numbers ->\n"
+                                    "Get most recent climate data from the guildroom "
+                                    "& estimated people count <i>(same as with /stalk)</i>\n\n"
+                                    ""
+                                    "/stalk ->\n"
+                                    "Get an estimated latest occupancy of the guildroom (RIP kiltiscam :(). "
+                                    "Based on the climate data\n"
+                                    "<i>(Currently a simple linear model based on co2 levels)</i>\n\n"
+                                    ""
+                                    "/addquote ->\n"
+                                    "Add a quote to the bot by replying to a message.\n"
+                                    "<b>Example:</b> /addquote exampltag1\n"
+                                    "<i>(Tags are necessary only with voice messages, "
+                                    "but also help finding other quotes later)</i>\n\n"
+                                    ""
+                                    "/fact ->\n"
+                                    "Get a random useless fact.\n\n"
+                                    ""
+                                    "/trivia ->\n"
+                                    "Get a random trivia quiz.\n\n"
+                                    ""
+                                    "/quote -> \n"
+                                    "Get a quote from the bot. Random if no added a search argument like "
                                     "the quotee, text in quote or tags.\n"
-                                    "Example: /quote funny\n\n"
-                                    "/listquotes ->\nGet a list of quotes from the bot\n"
-                                    "(Works only in private chat with the bot)\n\n"
-                                    "/deletequote ->\nDelete a quote from the bot by adding the quite ID. "
+                                    "<b>Example:</b> /quote funny\n\n"
+                                    ""
+                                    "/listquotes ->\n"
+                                    "Get a list of quotes from the bot\n"
+                                    "<i><u>(Works only in private chat with the bot)</u></i>\n\n"
+                                    ""
+                                    "/deletequote ->\n"
+                                    "Delete a quote from the bot by adding the quite ID.\n"
                                     "Get the ID with /listquotes.\n"
-                                    "(Works only in private chat with the bot)\n\n"
-                                    "/addjoke ->\nAdd a joke to the bot by replying to one or by writing one as an "
+                                    "<b>Example:</b> /deletequote 1234"
+                                    "<i><u>(Works only in private chat with the bot)</u></i>\n\n"
+                                    ""
+                                    "/addjoke ->\n"
+                                    "Add a joke to the bot by replying to one or by writing one as an "
                                     "argument after the command.\n\n"
-                                    "/joke ->\nGet a joke from the bot based on search arguments. Otherwise random.\n\n"
+                                    ""
+                                    "/joke ->\n"
+                                    "Get a joke from the bot based on search arguments. Otherwise random.\n\n"
+                                    ""
                                     "If there are any problems with the bot or suggestions for future functions,"
-                                    "contact spagutmk or @apeoskari")
+                                    "contact spagutmk or @apeoskari/@oskariniemi")
 
 
 async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Fetches the current song playing on the guild spotify-account.
+    AKA what's playing in the guildroom
+    """
     try:
         # Luo auth_manager ilman cachea (tai käytä vain refresh_tokenia)
         auth_manager = SpotifyOAuth(
