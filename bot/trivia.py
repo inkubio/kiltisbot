@@ -4,6 +4,7 @@ import random
 from telegram import Update, Poll
 from telegram.ext import ContextTypes
 
+
 async def trivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Retrieves a random trivia quiz from an open database.

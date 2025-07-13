@@ -1,9 +1,6 @@
-import random
 import sqlite3
 import logging
-from typing import Any, Dict, List
 from telegram import Update
-from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 import config
 from db_utils import songdb, _init_db
@@ -21,7 +18,7 @@ def _get_add_args(string):
     Arguments are metadata about a song.
     It's allowed not to have the arguments in the message, except for the name and lyrics.
     Argument order:
-    Title
+    Name
     Melody
     Writers:
     Composers
@@ -41,26 +38,26 @@ def _get_add_args(string):
         lyrics = ""
 
         for i, line in enumerate(lines):
-            if line.lower().startswith("Name:"):
+            if line.startswith("Name: "):
                 name = line.split(":", 1)[1].strip()
-            elif line.lower().startswith("Melody:"):
+            elif line.startswith("Melody: "):
                 melody = line.split(":", 1)[1].strip()
-            elif line.lower().startswith("Writers:"):
+            elif line.startswith("Writers: "):
                 writers = line.split(":", 1)[1].strip()
-            elif line.lower().startswith("Composers:"):
+            elif line.startswith("Composers: "):
                 composers = line.split(":", 1)[1].strip()
-            elif line.lower().startswith("Song number:"):
+            elif line.startswith("Song number: "):
                 song_number = line.split(":", 1)[1].strip()
-            elif line.lower().startswith("Page number:"):
+            elif line.startswith("Page number: "):
                 page_number = line.split(":", 1)[1].strip()
-            elif line.lower().startswith("Lyrics:"):
+            elif line.startswith("Lyrics:"):
                 lyrics = "\n".join(lines[i + 1:]).strip()
                 break  # Lyrics is last section
 
         if not name or not lyrics:
             return None  # these are mandatory
 
-        return name, melody, writers, lyrics, composers, song_number, page_number
+        return name, melody, writers, composers, song_number, page_number, lyrics
     except Exception:
         return None
 
@@ -84,23 +81,22 @@ def _search_song(args):
     results = set()
 
     try:
-        for arg in args:
-            name_matches = c.execute("""
-                            SELECT song_name
-                            FROM songs
-                            WHERE song_name LIKE :arg
-                            """,
-                             {"arg": like(arg)}
-                             ).fetchall()
-            lyric_matches = c.execute("""
-                             SELECT song_name
-                             FROM songs
-                             WHERE song_lyrics LIKE :arg
-                             """,
-                             {"arg": like(arg)}
-                             ).fetchall()
-            for row in name_matches + lyric_matches:
-                results.add(row[0])
+        name_matches = c.execute("""
+                        SELECT song_name
+                        FROM songs
+                        WHERE song_name LIKE :arg
+                        """,
+                         {"arg": like(args)}
+                         ).fetchall()
+        lyric_matches = c.execute("""
+                         SELECT song_name
+                         FROM songs
+                         WHERE song_lyrics LIKE :arg
+                         """,
+                         {"arg": like(args)}
+                         ).fetchall()
+        for row in name_matches + lyric_matches:
+            results.add(row[0])
     finally:
         conn.close()
 
@@ -126,7 +122,7 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if not raw_text or raw_text.strip() == "/addsong":
         await message.reply_text("Please include song info after /addsong:\n"
-                                 "Title: ...\n"
+                                 "Name: ...\n"
                                  "Melody: ...\n"
                                  "Writers: ...\n"
                                  "Composers: ...\n"
@@ -138,13 +134,14 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     args = _get_add_args(raw_text)
     if not args:
         await message.reply_text("Invalid song format. Please include:\n"
-                                 "Title: ...\n"
+                                 "Name: ...\n"
                                  "Melody: ...\n"
                                  "Writers: ...\n"
                                  "Composers: ...\n"
                                  "Song number: ...\n"
                                  "Page number: ...\n"
-                                 "Lyrics:\n...")
+                                 "Lyrics:\n...\n\n"
+                                 f"{args}")
         return
 
     # Unpack and optionally clean up args
@@ -158,7 +155,8 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                   (title, melody, writers, composers, song_number, page_number, lyrics))
         conn.commit()
         await update.message.reply_text(f"🎵 Added song:"
-                                        f"<i>'{title}'</i>")
+                                        f"<i>'{title}'</i>",
+                                        parse_mode="HTML")
     except Exception as e:
         logger.error("Error while adding song: %s", e)
         if "UNIQUE constraint failed" in str(e):
@@ -170,7 +168,7 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         conn.close()
 
 
-async def send_long_message(update: Update, text: str, parse_mode=ParseMode.HTML) -> None:
+async def send_long_message(update: Update, text: str) -> None:
     """
     Send a message, splitting it if it's too long for Telegram to send as one.
     ps. thank you FK!
@@ -179,7 +177,7 @@ async def send_long_message(update: Update, text: str, parse_mode=ParseMode.HTML
 
     if len(text) <= max_length:
         await update.message.reply_text(
-            text, parse_mode=parse_mode, disable_web_page_preview=True
+            text, parse_mode="HTML", disable_web_page_preview=True
         )
         return
 
@@ -210,12 +208,12 @@ async def send_long_message(update: Update, text: str, parse_mode=ParseMode.HTML
         if i == 0:
             # First chunk - send as reply
             await update.message.reply_text(
-                chunk, parse_mode=parse_mode, disable_web_page_preview=True
+                chunk, parse_mode="HTML", disable_web_page_preview=True
             )
         else:
             # Subsequent chunks - send as follow-up
             await update.effective_chat.send_message(
-                chunk, parse_mode=parse_mode, disable_web_page_preview=True
+                chunk, parse_mode="HTML", disable_web_page_preview=True
             )
 
 
@@ -231,7 +229,7 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn, c = _init_db(songdb)
 
     try:
-        arglist = _get_message_args(msg).split()
+        arglist = _get_message_args(msg)
         if not arglist:
             await update.message.reply_text("❗Please include search terms.")
             return
@@ -239,18 +237,25 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
         match_songs = _search_song(arglist)
         if not match_songs:
             await update.message.reply_text(
-                f"🔍 No results for: <i>{arglist}</i>\n\n"
+                f"🔍 No results for: <i>{arglist}</i>\n"
                 "Try different search terms!",
-                parse_mode=ParseMode.HTML,
+                parse_mode="HTML"
             )
             return
 
         placeholders = ','.join('?' for _ in match_songs)
-        ret = c.execute(f"""
-                            SELECT song_name, song_melody, song_writers, song_composers, song_song_number, song_page_number, song_lyrics
-                            FROM songs
-                            WHERE song_name IN ({placeholders})
-                        """, match_songs).fetchall()
+        try:
+            placeholders = ','.join('?' for _ in match_songs)
+            ret = c.execute(f"""
+                SELECT song_name, song_melody, song_writers, song_composers, 
+                       song_number, page_number, song_lyrics
+                FROM songs
+                WHERE song_name IN ({placeholders})
+            """, match_songs).fetchall()
+        except Exception as e:
+            logger.error("❌ SQL error in get_song(): %s", e, exc_info=True)
+            await update.message.reply_text(f"Database error: {e}")
+            return
 
         if len(match_songs) == 1 and ret:
             name, melody, writers, composers, song_number, page_number, lyrics = ret[0]
@@ -277,7 +282,7 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         else:
             text = (f"🎵 <u>Found <b>{len(match_songs)}</b> songs for the search:</u>\n"
-                    f"<i>{' '.join(arglist)}</i>")
+                    f"<i>{arglist}</i>\n\n")
 
             for i, song in enumerate(ret, 1):
                 name = song[0]
@@ -303,6 +308,7 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += "💡 Tarkenna hakua saadaksesi koko laulun!"
 
             await send_long_message(update, text)
+
     finally:
         conn.close()
 
@@ -326,9 +332,11 @@ async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Please provide a song name to delete.")
         return
 
-    matches = _search_song(query.split())
+    matches = _search_song(query)
     if not matches:
-        await update.message.reply_text(f"🔍 No matching song found for <i>'{query}'</i>.")
+        await update.message.reply_text(f"🔍 No matching song found for\n"
+                                        f"<i>'{query}'</i>.",
+                                        parse_mode="HTML")
         return
 
     conn, c = _init_db(songdb)
@@ -340,14 +348,17 @@ async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             """, (query,)).rowcount
         if deleted:
             conn.commit()
-            await update.message.reply_text(f"🗑️ Song <i>'{query}'</i> deleted.")
+            await update.message.reply_text(f"🗑️ Song <i>'{query}'</i> deleted.",
+                                            parse_mode="HTML")
         else:
             # If no exact match, suggest alternatives
             options = "\n".join(f"• {name}" for name in matches[:5])
             await update.message.reply_text(
                 f"⚠️ No exact match for '{query}'.\n"
-                f"Did you mean one of these?\n\n{options}\n\n"
-                f"Please retry with the exact title."
+                f"Did you mean one of these?\n\n"
+                f"<i>{options}</i>\n\n"
+                f"Please retry with the exact title.",
+                parse_mode="HTML"
             )
     except Exception as e:
         logger.error("Error while deleting song:\n"

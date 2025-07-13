@@ -14,21 +14,18 @@ import sqlite3
 from typing import List
 import requests
 import os
-import random
 import spotipy
 import html
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from telegram import ForceReply, Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 from spotipy.oauth2 import SpotifyOAuth
-import time
-import json
 from aiohttp import web
 from multiprocessing import Process
 
 import config
-from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, climatedb, init_climate_db, songdb, init_song_db
+from db_utils import quotedb, init_quote_db, jokedb, init_joke_db, climatedb, init_climate_db, songdb, init_song_db
 import coffee
 from joke import get_joke, add_joke
 from quote import list_quotes, add_quote, delete_quote, get_quote
@@ -39,16 +36,6 @@ from trivia import trivia
 from virpi import get_song, add_song, delete_song
 
 LOCAL_TZ = ZoneInfo("Europe/Helsinki")
-
-
-# Käytetääks tätä vai tota mikä on tuol db_utils.py filus
-def _init_db(database):
-    """
-    Initializes database connection
-    Returns cursor to interact with db
-    """
-    connection = sqlite3.connect(database)
-    return connection, connection.cursor()
 
 
 def _create_db(database, init_query):
@@ -154,7 +141,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                     "Get a joke from the bot based on search arguments. Otherwise random.\n\n"
                                     ""
                                     "If there are any problems with the bot or suggestions for future functions,"
-                                    "contact spagutmk or @apeoskari/@oskariniemi")
+                                    "contact spagutmk or @apeoskari/@oskarikalervo",
+                                    parse_mode="HTML")
 
 
 async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -189,7 +177,8 @@ async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             artist = track["item"]["artists"][0].get("name", "Unknown artist")
             await update.message.reply_text(f'🎶 Now playing:\n'
                                             f'<b>"{name}"</b>\n'
-                                            f'by <i>{artist}</i>')
+                                            f'by <i>{artist}</i>',
+                                            parse_mode="HTML")
         else:
             await update.message.reply_text("🛑 Nothing is currently playing.")
 
@@ -323,7 +312,7 @@ def start_bot():
     if not os.path.isfile(climatedb):
         _create_db(climatedb, init_climate_db)
     if not os.path.isfile(songdb):
-        _create_db(song.db, init_song_db)
+        _create_db(songdb, init_song_db)
 
     # Create the Application and pass it your bot's token (found int the config-file)
     application = Application.builder().token(config.kiltistoken).build()

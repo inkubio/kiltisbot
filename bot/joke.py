@@ -42,7 +42,8 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Please use /addjoke by replying to a message.\n"
                                             "Or or by using a joke as an argument after it.\n"
                                             "<b>Example:</b> /addjoke haha funny :D",
-                                            reply_to_message_id=message.message_id)
+                                            reply_to_message_id=message.message_id,
+                                            parse_mode="HTML")
             return
 
     date_added = int(message.date.timestamp())

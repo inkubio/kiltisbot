@@ -1,6 +1,5 @@
 import os
 import sqlite3
-import pytz
 from datetime import datetime, timedelta
 import pytz
 import pandas as pd

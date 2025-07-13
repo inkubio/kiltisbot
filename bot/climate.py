@@ -64,7 +64,8 @@ async def people_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     formatted_dt = dt_helsinki.strftime("%d.%m.%Y at %H:%M")
     await update.message.reply_text(f"<u><b>{formatted_dt}</b></u>\n"
                                     f"<b>Estimated occupancy:</b>\n"
-                                    f"~<i>{_get_ppl()}</i>")
+                                    f"~<i>{_get_ppl()}</i>",
+                                    parse_mode="HTML")
 
 
 async def guild_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -88,7 +89,8 @@ async def guild_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
                                     f"<b>CO2:</b> <i>{co}ppm</i>\n"
                                     f"<b>Temperature:</b> <i>{temp}°C</i>\n"
                                     f"<b>Humidity:</b> <i>{hum}%</i>\n"
-                                    f"<b>People:</b> ~<i>{_get_ppl()}</i>\n")
+                                    f"<b>People:</b> ~<i>{_get_ppl()}</i>\n",
+                                    parse_mode="HTML")
     return
 
 
