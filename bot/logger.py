@@ -1,13 +1,13 @@
 import logging
 
-# Perusformaatti ja taso
+# Basic format and level
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
 
-# Älä loggaa jokaista httpx GET/POST-pyyntöä
+# Don't log every httpx GET/POST-request
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-# Luo logger, jota muut tiedostot voivat käyttää
+# Create a logger that other files can use
 logger = logging.getLogger("kiltisbot")

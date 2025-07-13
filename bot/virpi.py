@@ -11,12 +11,23 @@ from logger import logger
 
 """
 Implementation of songbook database and it's usage trhough telegram.
-Huge thanks to Guild of Physics and their Fiisubot for inspiring and helping with this! <3
+Huge thanks to the Guild of Physics and their Fiisubot for inspiring and helping with this! <3
 """
+
 
 def _get_add_args(string):
     """
-    Returns a list of specified arguments given by the user. Arguments are metadata about a song.
+    Returns a list of specified arguments given by the user.
+    Arguments are metadata about a song.
+    It's allowed not to have the arguments in the message, except for the name and lyrics.
+    Argument order:
+    Title
+    Melody
+    Writers:
+    Composers
+    Song number
+    Page number
+    Lyrics
     """
     try:
         lines = string.strip().splitlines()
@@ -93,6 +104,7 @@ def _search_song(args):
     finally:
         conn.close()
 
+    # Sorting may not be required. Could be easier to send the list as it was found.
     matches = sorted(results) if results else None
     return matches
 
@@ -100,6 +112,7 @@ def _search_song(args):
 async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Adds a song from a private chat with a specified allowed user and adds it to a database.
+    List of allowed user IDs are found in config.py
     """
     if update.message.chat.type != "private":
         return
@@ -144,21 +157,23 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         c.execute("INSERT INTO songs VALUES (?, ?, ?, ?, ?, ?, ?)",
                   (title, melody, writers, composers, song_number, page_number, lyrics))
         conn.commit()
-        await update.message.reply_text(f"🎵 Song '{title}' added.")
+        await update.message.reply_text(f"🎵 Added song:"
+                                        f"<i>'{title}'</i>")
     except Exception as e:
         logger.error("Error while adding song: %s", e)
         if "UNIQUE constraint failed" in str(e):
-            await update.message.reply_text("Song already exists.")
+            await update.message.reply_text("This song has already been added ;)")
         else:
-            await update.message.reply_text(f"Error while adding song: {e}")
+            await update.message.reply_text(f"Error while adding song:\n"
+                                            f"{e}")
     finally:
         conn.close()
 
 
 async def send_long_message(update: Update, text: str, parse_mode=ParseMode.HTML) -> None:
     """
-    Send a message, splitting it if it's too long.
-    ps. thank you FK
+    Send a message, splitting it if it's too long for Telegram to send as one.
+    ps. thank you FK!
     """
     max_length = 4000  # Leave some buffer under Telegram's 4096 limit
 
@@ -224,7 +239,7 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
         match_songs = _search_song(arglist)
         if not match_songs:
             await update.message.reply_text(
-                f"🔍 No results for: <b>{arglist}</b>\n\n"
+                f"🔍 No results for: <i>{arglist}</i>\n\n"
                 "Try different search terms!",
                 parse_mode=ParseMode.HTML,
             )
@@ -240,19 +255,19 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if len(match_songs) == 1 and ret:
             name, melody, writers, composers, song_number, page_number, lyrics = ret[0]
 
-            text = f"🎵 <b>{name}</b>\n"
+            text = f"🎵 <u><b>{name}</b></u>\n"
 
             metadata = []
             if melody:
-                metadata.append(f"🎼 Mel: {melody}")
+                metadata.append(f"🎼 <i>Mel: {melody}</i>")
             if writers:
-                metadata.append(f"✍️ San: {writers}")
+                metadata.append(f"✍️ <i>San: {writers}</i>")
             if composers:
-                metadata.append(f"🎹 Sov: {composers}")
+                metadata.append(f"🎹 <i>Sov: {composers}</i>")
             if song_number:
-                metadata.append(f"Laulu nro {song_number}")
+                metadata.append(f"Laulu nro <i>{song_number}</i>")
             if page_number:
-                metadata.append(f"Sivu {page_number}")
+                metadata.append(f"Sivu <i>{page_number}</i>")
 
             if metadata:
                 text += "\n" + "\n".join(metadata) + "\n"
@@ -261,7 +276,8 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await send_long_message(update, text)
 
         else:
-            text = f"🎵 <b>Found {len(match_songs)} songs for the search:</b> {' '.join(arglist)}"
+            text = (f"🎵 <u>Found <b>{len(match_songs)}</b> songs for the search:</u>\n"
+                    f"<i>{' '.join(arglist)}</i>")
 
             for i, song in enumerate(ret, 1):
                 name = song[0]
@@ -282,7 +298,7 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     escaped_metadata = " | ".join(metadata_preview)
                     text += f"   📄 <i>{escaped_metadata}</i>\n"
 
-                text += f"   🎵 <i>{lyrics_preview}</i>\n\n"
+                text += f"   🎵 {lyrics_preview}\n\n"
 
             text += "💡 Tarkenna hakua saadaksesi koko laulun!"
 
@@ -293,7 +309,7 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Allows speicied users to delete songs from the database in private chat.
+    Allows specified users to delete songs from the database in private chat.
     """
 
     if update.message.chat.type != "private":
@@ -312,7 +328,7 @@ async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     matches = _search_song(query.split())
     if not matches:
-        await update.message.reply_text(f"🔍 No matching song found for '{query}'.")
+        await update.message.reply_text(f"🔍 No matching song found for <i>'{query}'</i>.")
         return
 
     conn, c = _init_db(songdb)
@@ -324,7 +340,7 @@ async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             """, (query,)).rowcount
         if deleted:
             conn.commit()
-            await update.message.reply_text(f"🗑️ Song '{query}' deleted.")
+            await update.message.reply_text(f"🗑️ Song <i>'{query}'</i> deleted.")
         else:
             # If no exact match, suggest alternatives
             options = "\n".join(f"• {name}" for name in matches[:5])
@@ -334,7 +350,8 @@ async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"Please retry with the exact title."
             )
     except Exception as e:
-        logger.error("Error while deleting song: %s", e)
+        logger.error("Error while deleting song:\n"
+                     "%s", e)
         await update.message.reply_text("❌ An error occurred while deleting the song.")
     finally:
         conn.close()

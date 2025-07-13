@@ -28,7 +28,7 @@ from aiohttp import web
 from multiprocessing import Process
 
 import config
-from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, climatedb, init_climate_db
+from db_utils import _init_db, quotedb, init_quote_db, jokedb, init_joke_db, climatedb, init_climate_db, songdb, init_song_db
 import coffee
 from joke import get_joke, add_joke
 from quote import list_quotes, add_quote, delete_quote, get_quote
@@ -66,7 +66,6 @@ def _create_db(database, init_query):
         quit()
     else:
         conn.close()
-
 
 
 """
@@ -116,17 +115,19 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                     "Based on the climate data\n"
                                     "<i>(Currently a simple linear model based on co2 levels)</i>\n\n"
                                     ""
-                                    "/addquote ->\n"
-                                    "Add a quote to the bot by replying to a message.\n"
-                                    "<b>Example:</b> /addquote exampltag1\n"
-                                    "<i>(Tags are necessary only with voice messages, "
-                                    "but also help finding other quotes later)</i>\n\n"
-                                    ""
                                     "/fact ->\n"
                                     "Get a random useless fact.\n\n"
                                     ""
                                     "/trivia ->\n"
                                     "Get a random trivia quiz.\n\n"
+                                    ""
+                                    "/addquote ->\n"
+                                    "Add a quote to the bot by replying to a message.\n"
+                                    "<b>Example:</b> /addquote exampltag1\n"
+                                    "<i>(Tags are necessary only with voice messages, "
+                                    "but also help finding other quotes later)</i>\n"
+                                    "<b>❌⚠️IMPORTANT!⚠️❌\n"
+                                    "Quotes are chat specific!</b>\n\n"
                                     ""
                                     "/quote -> \n"
                                     "Get a quote from the bot. Random if no added a search argument like "
@@ -145,7 +146,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                     ""
                                     "/addjoke ->\n"
                                     "Add a joke to the bot by replying to one or by writing one as an "
-                                    "argument after the command.\n\n"
+                                    "argument after the command.\n"
+                                    "<b>❌⚠️IMPORTANT!⚠️❌\n"
+                                    "Jokes are global and NOT chat specific!</b>\n\n"
                                     ""
                                     "/joke ->\n"
                                     "Get a joke from the bot based on search arguments. Otherwise random.\n\n"
@@ -160,16 +163,16 @@ async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     AKA what's playing in the guildroom
     """
     try:
-        # Luo auth_manager ilman cachea (tai käytä vain refresh_tokenia)
+        # Create auth_manager without cache (or use just refresh_token)
         auth_manager = SpotifyOAuth(
             client_id=config.SPOTIPY_CLIENT_ID,
             client_secret=config.SPOTIPY_CLIENT_SECRET,
             redirect_uri=config.REDIRECT_URI,
             scope="user-read-currently-playing",
-            cache_path=None  # Estetään turha .cache-tiedosto
+            cache_path=None  # Preventing an unnecessary .cache-file
         )
 
-        # 🔁 Päivitä access token käyttäen refresh tokenia
+        # 🔁 Update access token using refresh token
         token_info = auth_manager.refresh_access_token(config.REFRESH_TOKEN)
         access_token = token_info.get("access_token")
 
@@ -177,14 +180,16 @@ async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await update.message.reply_text("❌ Failed to retrieve access token.")
             return
 
-        # 🎵 Hae tiedot nykyisestä kappaleesta
+        # 🎵 Retreive information about the current song
         spotify = spotipy.Spotify(auth=access_token)
         track = spotify.current_user_playing_track()
 
         if track and track.get("item"):
             name = track["item"].get("name", "Unknown title")
             artist = track["item"]["artists"][0].get("name", "Unknown artist")
-            await update.message.reply_text(f'🎶 Now playing:\n"{name}"\nby {artist}')
+            await update.message.reply_text(f'🎶 Now playing:\n'
+                                            f'<b>"{name}"</b>\n'
+                                            f'by <i>{artist}</i>')
         else:
             await update.message.reply_text("🛑 Nothing is currently playing.")
 
@@ -192,7 +197,12 @@ async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         print(f"Error in music(): {e}")
         await update.message.reply_text("⚠️ Error retrieving playback status.")
 
+
 async def fun_fact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Retrieves a fun/useless fact from an api for them.
+    Can also be changed to other facts.
+    """
     try:
         response = requests.get("https://uselessfacts.jsph.pl/api/v2/facts/random?language=en")
         response.raise_for_status()
@@ -203,8 +213,11 @@ async def fun_fact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     await update.message.reply_text(fact)
 
+
 def parse_event_time(timestr):
-    """Parses ISO time string with or without timezone."""
+    """
+    Parses ISO time string with or without timezone.
+    """
     if 'T' in timestr:
         # Time specified, likely with UTC offset
         return datetime.fromisoformat(timestr).astimezone(LOCAL_TZ)
@@ -212,7 +225,11 @@ def parse_event_time(timestr):
         # All-day event, date only
         return datetime.fromisoformat(timestr).replace(tzinfo=LOCAL_TZ)
 
+
 def format_event(event):
+    """
+    Formats event information into a desired string format.
+    """
     start_raw = event['start'].get('dateTime', event['start'].get('date'))
     end_raw = event['end'].get('dateTime', event['end'].get('date'))
 
@@ -248,9 +265,13 @@ def format_event(event):
     if location:
         location_text = f"\n📍 {html.escape(location)}"
 
-    return f"📅 <b>{summary}</b>\n🕒 {time_str}{location_text}".strip()
+    return f"📅 <b>{summary}</b>\n🕒 <b>{time_str}</b><i>{location_text}</i>".strip()
+
 
 async def events(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Sends a formatted list of up to 5 upcoming guildevents to a chat.
+    """
     url = f"https://www.googleapis.com/calendar/v3/calendars/{config.CALENDAR_ID}/events"
     now = datetime.utcnow().isoformat() + 'Z'
     params = {
@@ -277,6 +298,7 @@ async def events(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"⚠️ Failed to fetch events: {e}")
 
+
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Error handling and logging.
@@ -300,6 +322,8 @@ def start_bot():
         _create_db(jokedb, init_joke_db)
     if not os.path.isfile(climatedb):
         _create_db(climatedb, init_climate_db)
+    if not os.path.isfile(songdb):
+        _create_db(song.db, init_song_db)
 
     # Create the Application and pass it your bot's token (found int the config-file)
     application = Application.builder().token(config.kiltistoken).build()
@@ -321,9 +345,8 @@ def start_bot():
     application.add_handler(CommandHandler("addjoke", add_joke))
     application.add_handler(CommandHandler("joke", get_joke))
     application.add_handler(CommandHandler("virpi", get_song))
-    application.add_handler(CommandHandler("addsong", add_song))
-    application.add_handler(CommandHandler("deletesong", delete_song))
-    
+    application.add_handler(CommandHandler("addsong", add_song))        # Hidden from other users
+    application.add_handler(CommandHandler("deletesong", delete_song))  # Hidden from other users
 
     # For debugging
     # application.add_handler(CommandHandler("echo", echo))
@@ -334,9 +357,11 @@ def start_bot():
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
+
 def run_web_app():
     app = create_web_app()
     web.run_app(app, host='0.0.0.0', port=8000)
+
 
 def main() -> None:
     bot_process = Process(target=start_bot)

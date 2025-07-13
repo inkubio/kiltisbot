@@ -9,11 +9,13 @@ import config
 from db_utils import jokedb, _init_db
 from logger import logger
 
+
 def _get_message_args(string):
     """
     Returns all args from input string separated with spaces as a string
     """
     return " ".join([tag for tag in string.split() if tag[0] != '/'])
+
 
 async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -37,13 +39,13 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         joke = _get_message_args(message.text)
         tags = ""
         if not joke:
-            await update.message.reply_text("Please use '/addjoke' by replying to a message or with a joke as an argument.",
-                            reply_to_message_id=message.message_id)
+            await update.message.reply_text("Please use /addjoke by replying to a message.\n"
+                                            "Or or by using a joke as an argument after it.\n"
+                                            "<b>Example:</b> /addjoke haha funny :D",
+                                            reply_to_message_id=message.message_id)
             return
 
-    chat_id = message.chat.id
     date_added = int(message.date.timestamp())
-    said_by = message.from_user.first_name.lower() + " " + message.from_user.last_name.lower()
 
     conn, c = _init_db(jokedb)
     try:
@@ -60,7 +62,7 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def _search_joke(args):
     """
     Fetches a random joke based on arguments, which are matched
-    with text of joke or tags of joke
+    with text of joke or tags of a joke
     """
     def like(string):
         return "%{}%".format(string)

@@ -1,5 +1,3 @@
-"""Simple script for plotting climate sensor data."""
-
 import os
 import sqlite3
 import pytz
@@ -11,8 +9,13 @@ from matplotlib.dates import DateFormatter
 from matplotlib import dates, ticker
 from zoneinfo import ZoneInfo
 
+
 def plotting():
-    #Timezones
+    """
+    Draws a climate data plot of the last 24h.
+    If no data vailable, the plot will be empty.
+    """
+    # Timezones
     helsinki_tz = pytz.timezone('Europe/Helsinki')
 
     # Timerange to be the last 24h (in Helsinki time)
@@ -57,6 +60,8 @@ def plotting():
         ax.grid(which="major", axis="x", linestyle="-")
         ax.grid(which="minor", axis="x", linestyle="--")
 
+    # Format the individual subplots and their axis.
+
     ax = axs[0]
     ax.scatter(x=df.time, y=df.co2, s=2, color='green')
     ax.set_ylabel('CO2 (ppm)')
@@ -84,4 +89,3 @@ def plotting():
     os.makedirs('plots', exist_ok=True)
     # Save the figure as a png to a location
     plt.savefig(os.path.join('plots', 'newest.png'))
-

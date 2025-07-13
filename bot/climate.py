@@ -8,20 +8,30 @@ from zoneinfo import ZoneInfo
 import plot_data
 from datetime import datetime
 
+
 def _get_climate_data():
+    """
+    Retrieve data from the database and return it as a list.
+    [temperature, co2, humidity, timestamp]
+    """
     try:
         conn = sqlite3.connect("climate.db")
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT temperature, co2, humidity, timestamp FROM climate_data ORDER BY timestamp DESC LIMIT 1"
-        )
+        cursor.execute("""
+            SELECT temperature, co2, humidity, timestamp
+            FROM climate_data
+            ORDER BY timestamp DESC LIMIT 1
+            """)
+
         row = cursor.fetchone()
         conn.close()
+
         if row:
             # row = (temp, co2, humidity, timestamp)
             return [float(row[0]), int(row[1]), float(row[2]), row[3]]
         else:
             return [0, 0, 0, None]
+
     except Exception as e:
         print("DB error:", e)
         return [0, 0, 0, None]
@@ -32,6 +42,7 @@ def _get_ppl():
     Reads the most recent climate data from the guildroom
     and then predicts the amount of people at the guildroom.
     The current model is linear and not very accurate, but it'll do for now.
+    (Also gives out negatives values with low enough ppm, which imo is kinda funny)
     """
     co = _get_climate_data()[1]
     if co != 0:
@@ -51,12 +62,14 @@ async def people_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     dt_utc = dt.replace(tzinfo=ZoneInfo("UTC"))
     dt_helsinki = dt_utc.astimezone(ZoneInfo("Europe/Helsinki"))
     formatted_dt = dt_helsinki.strftime("%d.%m.%Y at %H:%M")
-    await update.message.reply_text("{}\nEstimated occupancy:\n ~{}".format(formatted_dt, _get_ppl()))
+    await update.message.reply_text(f"<u><b>{formatted_dt}</b></u>\n"
+                                    f"<b>Estimated occupancy:</b>\n"
+                                    f"~<i>{_get_ppl()}</i>")
 
 
 async def guild_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Returns a compilation of the climate data from the guildroom
+    Returns a compilation of the climate data from the guildroom with a timestamp
     Collected with the gmw90 attached to the wall at the guildroom.
 
     Formatting example:
@@ -71,11 +84,12 @@ async def guild_data(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     dt_utc = dt.replace(tzinfo=ZoneInfo("UTC"))
     dt_helsinki = dt_utc.astimezone(ZoneInfo("Europe/Helsinki"))
     formatted_dt = dt_helsinki.strftime("%d.%m.%Y at %H:%M")
-    await update.message.reply_text("{}\n"
-                                    "CO2: {}ppm\n"
-                                    "Temperature: {}°C\n"
-                                    "Humidity: {}%\n"
-                                    "People: ~{}\n".format(formatted_dt, co, temp, hum, _get_ppl()))
+    await update.message.reply_text(f"<u><b>{formatted_dt}</b></u>\n"
+                                    f"<b>CO2:</b> <i>{co}ppm</i>\n"
+                                    f"<b>Temperature:</b> <i>{temp}°C</i>\n"
+                                    f"<b>Humidity:</b> <i>{hum}%</i>\n"
+                                    f"<b>People:</b> ~<i>{_get_ppl()}</i>\n")
+    return
 
 
 async def get_plot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

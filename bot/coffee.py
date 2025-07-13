@@ -7,13 +7,15 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from logger import logger
 
-# Muuttujat analyysin ja aikaleiman tallentamiseen globaalisti (tai esim. config-tiedostoon)
+# Variables for saving analysis and timestamp globally (could also be in confi.py)
 _last_analysis = None
 _last_analysis_time = 0
 
+
 async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Returns the current coffee level in the guildroom.
+    Returns a picture of the coffeepot at the guildroom.
+    Can also be modified to reurn an analysis of the picture and an estimated coffee amount.
     """
     try:
         await get_coffee_analysis()
@@ -22,12 +24,13 @@ async def get_coffee(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     except Exception as e:
         await update.message.reply_text(f"Sending photo failed: {e}")
 
+
 def analyze_coffee(image: Image.Image) -> int:
     """
-    Tässä sinun analyysifunktio, joka laskee tumma pikseliä yms.
-    Palauttaa analyysin tuloksen (esim. tumma pikselimäärä).
+    Here's a function to analyze the coffeepot picture.
+    Returns the result of the analysis, like the proportion of dark pixels.
     """
-    # Esimerkki: lasketaan tummat pikselit
+    # Example: Count the amount of dark pixels
     grayscale = image.convert("L")
     pixels = grayscale.load()
     width, height = image.size
@@ -41,14 +44,18 @@ def analyze_coffee(image: Image.Image) -> int:
 
 
 async def get_coffee_analysis():
+    """
+    Coffeepot analysis results, can be a picture or an analysis of it via the function above.
+    Currently just getting the picture.
+    """
     global _last_analysis, _last_analysis_time
 
     now = time.time()
-    # Jos analyysi on tehty alle 2 min sitten, käytetään välimuistia
+    # If analysis done under 2 minutes ago, using cache
     if _last_analysis is not None and (now - _last_analysis_time) < 120:
         return
 
-    # Pyydetään uusi kuva
+    # Requesting a new pic from the raspberry at the guildroom
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.post("http://localhost:6000")
@@ -59,10 +66,10 @@ async def get_coffee_analysis():
 
     image = Image.open(io.BytesIO(content))
     image.save("kuva.png")
-    # Analysoidaan kuva
+    # Analyze the picture
     #result = analyze_coffee(image)
 
-    # Tallennetaan tulos ja aikaleima
+    # Save the result and a timestamp
     #_last_analysis = result
     _last_analysis = True
     _last_analysis_time = now

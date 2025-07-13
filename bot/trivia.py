@@ -5,7 +5,10 @@ from telegram import Update, Poll
 from telegram.ext import ContextTypes
 
 async def trivia(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # fetch the guiz
+    """
+    Retrieves a random trivia quiz from an open database.
+    Creates the quiz and sends it to the chat.
+    """
     try:
         response = requests.get("https://opentdb.com/api.php?amount=1&type=multiple")
         response.raise_for_status()
