@@ -66,7 +66,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     Returns a help message with instructions on how to use the bot.
     Should be get up to date with the functionalities of the bot.
     """
-    await update.message.reply_text("<u><b>Commands & Instructions:</b></u>\n\n"
+    await update.message.reply_text("<u><b>Commands &amp; Instructions:</b></u>\n\n"
                                     ""
                                     "/help\n"
                                     "This message.\n\n"
@@ -94,7 +94,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                     ""
                                     "/numbers ->\n"
                                     "Get most recent climate data from the guildroom "
-                                    "& estimated people count <i>(same as with /stalk)</i>\n\n"
+                                    "&amp; estimated people count <i>(same as with /stalk)</i>\n\n"
                                     ""
                                     "/stalk ->\n"
                                     "Get an estimated latest occupancy of the guildroom. "
