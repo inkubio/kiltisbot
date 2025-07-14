@@ -142,8 +142,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await update.message.reply_text(help_text, parse_mode="HTML")
     except Exception as e:
         logger.error(f"Error sending help message: {e}")
-        # Optionally notify the user about the error
-        await update.message.reply_text("Sorry, an error occurred while sending the help message.", parse_mode="HTML")                          parse_mode="HTML"
+        await update.message.reply_text("Sorry, an error occurred while sending the help message.")
 
 
 async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
