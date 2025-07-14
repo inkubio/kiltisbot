@@ -11,7 +11,6 @@ email: kuusinen.aaro@gmail.com / okkixi@gmail.com
 
 import logging
 import sqlite3
-from typing import List
 import requests
 import os
 import spotipy
@@ -69,36 +68,36 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """
     await update.message.reply_text("<u><b>Commands & Instructions:</b></u>\n\n"
                                     ""
-                                    "/help ->\n"
+                                    "/help\n"
                                     "This message.\n\n"
                                     ""
-                                    "/coffee ->\n"
+                                    "/coffee\n"
                                     "Get a picture of the coffee pot at the guildroom.\n\n"
                                     ""
-                                    "/events ->\n"
+                                    "/events\n"
                                     "Get future guild events.\n\n"
                                     ""
-                                    "/music ->\n"
+                                    "/music\n"
                                     "What music is currently playing at the guildroom.\n\n"
                                     ""
-                                    "/virpi ->\n"
+                                    "/virpi <argument>\n"
                                     "Search for a song from the latest VIRPI based on the name or lyrics.\n"
                                     "If no exact match found, the best search results are shown.\n"
-                                    "Then try again."
-                                    "<b>Example:</b> /virpi hyvät ystävät"
+                                    "To get the exact song try again with a more specific search.\n"
+                                    "<b>Example:</b> /virpi hyvät ystävät\n\n"
                                     ""
                                     "/plot ->\n"
                                     "Draws a plot from the climate data <i>(last 24h)</i>\n"
-                                    "<b>CO2:</b> Solid line every 200ppm and dashed every 100ppm\n"
-                                    "<b>Temp:</b> Solid line every 1°C and dashed every 0,5°C\n"
-                                    "<b>Humid:</b> Solid line every 5% and dashed every 2,5%\n\n"
+                                    "<b>CO2:</b> Solid line every <i>200ppm</i> and dashed every <i>100ppm</i>\n"
+                                    "<b>Temp:</b> Solid line every <i>1°C</i> and dashed every <i>0,5°C</i>\n"
+                                    "<b>Humid:</b> Solid line every <i>5%</i> and dashed every <i>2,5%</i>\n\n"
                                     ""
                                     "/numbers ->\n"
                                     "Get most recent climate data from the guildroom "
                                     "& estimated people count <i>(same as with /stalk)</i>\n\n"
                                     ""
                                     "/stalk ->\n"
-                                    "Get an estimated latest occupancy of the guildroom (RIP kiltiscam :(). "
+                                    "Get an estimated latest occupancy of the guildroom. "
                                     "Based on the climate data\n"
                                     "<i>(Currently a simple linear model based on co2 levels)</i>\n\n"
                                     ""
@@ -128,7 +127,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                     "/deletequote ->\n"
                                     "Delete your quote from the bot by adding the quite ID.\n"
                                     "Get the ID with /listquotes.\n"
-                                    "<b>Example:</b> /deletequote 1234"
+                                    "<b>Example:</b> /deletequote 1234\n"
                                     "<i><u>(Works only in private chat with the bot\n"
                                     "and you can delete only your own quotes)</u></i>\n\n"
                                     ""
@@ -166,7 +165,7 @@ async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         access_token = token_info.get("access_token")
 
         if not access_token:
-            await update.message.reply_text("❌ Failed to retrieve access token.")
+            await update.message.reply_text("❌ Failed to retrieve access token ❌")
             return
 
         # 🎵 Retreive information about the current song
@@ -176,16 +175,16 @@ async def music(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if track and track.get("item"):
             name = track["item"].get("name", "Unknown title")
             artist = track["item"]["artists"][0].get("name", "Unknown artist")
-            await update.message.reply_text(f'🎶 Now playing:\n'
+            await update.message.reply_text(f'🎶 Now playing 🎶\n'
                                             f'<b>"{name}"</b>\n'
                                             f'by <i>{artist}</i>',
                                             parse_mode="HTML")
         else:
-            await update.message.reply_text("🛑 Nothing is currently playing.")
+            await update.message.reply_text("🛑 Nothing is currently playing 🛑")
 
     except Exception as e:
         print(f"Error in music(): {e}")
-        await update.message.reply_text("⚠️ Error retrieving playback status.")
+        await update.message.reply_text("⚠️ Error retrieving playback status ⚠️")
 
 
 async def fun_fact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -197,7 +196,7 @@ async def fun_fact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         response = requests.get("https://uselessfacts.jsph.pl/api/v2/facts/random?language=en")
         response.raise_for_status()
         data = response.json()
-        fact = data.get("text", "Couldn't find a fact right now.")
+        fact = data.get("text", "🛑 Couldn't find a fact right now 🛑")
     except Exception as e:
         fact = f"Error fetching fact: {e}"
     
@@ -278,15 +277,15 @@ async def events(update: Update, context: ContextTypes.DEFAULT_TYPE):
         items = resp.json().get("items", [])
 
         if not items:
-            await update.message.reply_text("No upcoming events found.")
+            await update.message.reply_text("🛑 No upcoming events found 🛑")
             return
 
         event_texts = [format_event(item) for item in items]
         message = "\n\n".join(event_texts)
-        await update.message.reply_text(message, parse_mode="HTML")
+        await update.message.reply_text(f"<u><b>UPCOMING EVENTS:</b></u>\n\n" + message, parse_mode="HTML")
 
     except Exception as e:
-        await update.message.reply_text(f"⚠️ Failed to fetch events: {e}")
+        await update.message.reply_text(f"⚠️ Failed to fetch events ⚠️\n{e}")
 
 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

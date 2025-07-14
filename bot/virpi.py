@@ -102,7 +102,7 @@ def _search_song(args):
 
     # Sorting may not be required. Could be easier to send the list as it was found.
     matches = sorted(results) if results else None
-    return matches
+    return matches[:5]  # Give only the top 5 results
 
 
 async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -114,7 +114,7 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     if update.message.from_user.id not in config.SONG_MASTERS:
-        await update.message.reply_text("Sorry, not allowed to do that ;)")
+        await update.message.reply_text("🛑 Sorry, not allowed to do that ;) 🛑")
         return
 
     message = update.message
@@ -154,15 +154,15 @@ async def add_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         c.execute("INSERT INTO songs VALUES (?, ?, ?, ?, ?, ?, ?)",
                   (title, melody, writers, composers, song_number, page_number, lyrics))
         conn.commit()
-        await update.message.reply_text(f"🎵 Added song:"
+        await update.message.reply_text(f"✅ Added song ✅\n"
                                         f"<i>'{title}'</i>",
                                         parse_mode="HTML")
     except Exception as e:
         logger.error("Error while adding song: %s", e)
-        if "UNIQUE constraint failed" in str(e):
-            await update.message.reply_text("This song has already been added ;)")
+        if str(e).startswith("UNIQUE constraint failed"):
+            await update.message.reply_text("🛑 This song has already been added 🛑")
         else:
-            await update.message.reply_text(f"Error while adding song:\n"
+            await update.message.reply_text(f"⚠️ Error while adding song ⚠️\n"
                                             f"{e}")
     finally:
         conn.close()
@@ -237,7 +237,8 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
         match_songs = _search_song(arglist)
         if not match_songs:
             await update.message.reply_text(
-                f"🔍 No results for: <i>{arglist}</i>\n"
+                f"🔍 No results for🔍\n"
+                f"<i>{arglist}</i>\n"
                 "Try different search terms!",
                 parse_mode="HTML"
             )
@@ -253,61 +254,70 @@ async def get_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 WHERE song_name IN ({placeholders})
             """, match_songs).fetchall()
         except Exception as e:
-            logger.error("❌ SQL error in get_song(): %s", e, exc_info=True)
-            await update.message.reply_text(f"Database error: {e}")
+            logger.error("❌ SQL error in get_song() %s", e, exc_info=True)
+            await update.message.reply_text(f"⚠️ Database error ⚠️\n"
+                                            f"{e}")
             return
 
-        if len(match_songs) == 1 and ret:
-            name, melody, writers, composers, song_number, page_number, lyrics = ret[0]
+        try:
+            if len(match_songs) == 1 and ret:
+                name, melody, writers, composers, song_number, page_number, lyrics = ret[0]
 
-            text = f"🎵 <u><b>{name}</b></u>\n"
+                text = f"🎵 <u><b>{name}</b></u> 🎵\n"
 
-            metadata = []
-            if melody:
-                metadata.append(f"🎼 <i>Mel: {melody}</i>")
-            if writers:
-                metadata.append(f"✍️ <i>San: {writers}</i>")
-            if composers:
-                metadata.append(f"🎹 <i>Sov: {composers}</i>")
-            if song_number:
-                metadata.append(f"Laulu nro <i>{song_number}</i>")
-            if page_number:
-                metadata.append(f"Sivu <i>{page_number}</i>")
-
-            if metadata:
-                text += "\n" + "\n".join(metadata) + "\n"
-
-            text += f"\n{lyrics}"
-            await send_long_message(update, text)
-
-        else:
-            text = (f"🎵 <u>Found <b>{len(match_songs)}</b> songs for the search:</u>\n"
-                    f"<i>{arglist}</i>\n\n")
-
-            for i, song in enumerate(ret, 1):
-                name = song[0]
-                melody = song[1]
-                lyrics = song[6]
-
-                metadata_preview = []
+                metadata = []
                 if melody:
-                    metadata_preview.append(f"Säv. {melody}")
+                    metadata.append(f"🎼 <i>Mel: {melody}</i>")
+                if writers:
+                    metadata.append(f"✍️ <i>San: {writers}</i>")
+                if composers:
+                    metadata.append(f"🎹 <i>Sov: {composers}</i>")
+                if song_number:
+                    metadata.append(f"Laulu nro <i>{song_number}</i>")
+                if page_number:
+                    metadata.append(f"Sivu <i>{page_number}</i>")
 
-                lyrics_preview = lyrics.split("\n")[0] if lyrics else "Ei saatavilla :("
-                if len(lyrics) > 40:
-                    lyrics_preview = lyrics_preview[:40] + "..."
+                if metadata:
+                    text += "\n" + "\n".join(metadata) + "\n"
 
-                text += f"{i}. <b>{name}</b>\n"
+                text += f"\n{lyrics}"
+                await send_long_message(update, text)
 
-                if metadata_preview:
-                    escaped_metadata = " | ".join(metadata_preview)
-                    text += f"   📄 <i>{escaped_metadata}</i>\n"
+            else:
+                text = (f"🎵 <u>Found <b>{len(match_songs)}</b> songs</u> 🎵\n"
+                        f"for the search:\n"
+                        f"<i>{arglist}</i>\n\n")
 
-                text += f"   🎵 {lyrics_preview}\n\n"
+                for i, song in enumerate(ret, 1):
+                    name = song[0]
+                    melody = song[1]
+                    lyrics = song[6]
 
-            text += "💡 Tarkenna hakua saadaksesi koko laulun!"
+                    metadata_preview = []
+                    if melody:
+                        metadata_preview.append(f"Mel. {melody}")
 
-            await send_long_message(update, text)
+                    lyrics_preview = lyrics.split("\n")[0] if lyrics else "Ei saatavilla :("
+                    if len(lyrics) > 40:
+                        lyrics_preview = lyrics_preview[:40] + "..."
+
+                    text += f"<b>{i}. {name}</b>\n"
+
+                    if metadata_preview:
+                        escaped_metadata = " | ".join(metadata_preview)
+                        text += f"   🎼 <i>{escaped_metadata}</i>\n"
+
+                    text += f"   🎵 {lyrics_preview}\n\n"
+
+                text += "💡 <i>Tarkenna hakua saadaksesi vain yksi laulu</i> 💡"
+
+                await send_long_message(update, text)
+
+        except Exception as e:
+            logger.error("❌ Error sending song or songlist: %s", e, exc_info=True)
+            await update.message.reply_text(f"⚠️ Error sending song/list of search results ⚠️\n"
+                                            f"{e}")
+            return
 
     finally:
         conn.close()
@@ -322,7 +332,7 @@ async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if update.message.from_user.id not in config.SONG_MASTERS:
-        await update.message.reply_text("Sorry, not allowed to do that ;)")
+        await update.message.reply_text("🛑 Sorry, not allowed to do that ;) 🛑")
         return
 
     msg = update.message.text
@@ -348,13 +358,16 @@ async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             """, (query,)).rowcount
         if deleted:
             conn.commit()
-            await update.message.reply_text(f"🗑️ Song <i>'{query}'</i> deleted.",
+            await update.message.reply_text(f"🗑️ Song\n"
+                                            f"<i>'{query}'</i>\n"
+                                            f"deleted.",
                                             parse_mode="HTML")
         else:
             # If no exact match, suggest alternatives
             options = "\n".join(f"• {name}" for name in matches[:5])
             await update.message.reply_text(
-                f"⚠️ No exact match for '{query}'.\n"
+                f"⚠️ No exact match for ⚠️\n"
+                f"'{query}'.\n"
                 f"Did you mean one of these?\n\n"
                 f"<i>{options}</i>\n\n"
                 f"Please retry with the exact title.",
@@ -363,6 +376,6 @@ async def delete_song(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error("Error while deleting song:\n"
                      "%s", e)
-        await update.message.reply_text("❌ An error occurred while deleting the song.")
+        await update.message.reply_text("❌ An error occurred while deleting the song ❌")
     finally:
         conn.close()

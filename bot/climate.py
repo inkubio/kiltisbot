@@ -63,7 +63,7 @@ async def people_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     dt_helsinki = dt_utc.astimezone(ZoneInfo("Europe/Helsinki"))
     formatted_dt = dt_helsinki.strftime("%d.%m.%Y at %H:%M")
     await update.message.reply_text(f"<u><b>{formatted_dt}</b></u>\n"
-                                    f"<b>Estimated occupancy:</b>\n"
+                                    f"<b>Occupancy:</b>\n"
                                     f"~<i>{_get_ppl()}</i>",
                                     parse_mode="HTML")
 

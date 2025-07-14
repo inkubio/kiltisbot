@@ -88,19 +88,19 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Determining whether the quote is valid with the following if/else clauses.
     # Using command when not replying
     if not update.effective_message.reply_to_message:
-        await update.message.reply_text("Please use /addquote by replying to a message.")
+        await update.message.reply_text("💡 Please use /addquote by replying to a message 💡")
         return
 
     reply = update.message.reply_to_message
 
     # Using command and not replying to a text or a voice message
     if not reply.text and not reply.voice:
-        await update.message.reply_text("Please only add text or voice quotes.")
+        await update.message.reply_text("💡 Please only add text or voice quotes 💡")
         return
 
     # Using command without tags on a voice message
     if reply.voice and not _get_message_args(update.message.text):
-        await update.message.reply_text("Please add search tags after /addquote for voice messages.")
+        await update.message.reply_text("💡 Please add search tags after /addquote for voice messages 💡")
         return
 
     message = update.message
@@ -134,7 +134,7 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         c.execute("INSERT INTO quotes VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                   (quote_text, tags, message_id, chat_id, said_by, added_by, said_date, added_date))
         conn.commit()
-        await update.message.reply_text("Quote added.")
+        await update.message.reply_text("✅ Quote added ✅")
 
     except Exception as e:
         logger.error("Error while adding quote: %s", e)
@@ -153,19 +153,21 @@ async def add_quote(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                                 WHERE message_id = ?
                                 """, (new_tags, str(message_id)))
                     conn.commit()
-                    await update.message.reply_text("Message already added!\n"
+                    await update.message.reply_text("🔍 Message already added 🔍️\n"
                                                     "Tags updated.")
                 else:
-                    await update.message.reply_text("Could not update tags:\n"
+                    await update.message.reply_text("🛑 Could not update tags 🛑\n"
                                                     "quote not found.")
             except Exception as tag_err:
                 logger.error("Tag update failed:\n"
                              "%s", tag_err)
-                await update.message.reply_text("Error updating tags.")
+                await update.message.reply_text("⚠️ Error updating tags ⚠️")
         elif str(e).startswith("UNIQUE constraint failed"):
-            await update.message.reply_text("Error adding quote:\nMessage already added!")
+            await update.message.reply_text("⚠️ Error adding quote ⚠️"
+                                            "\nMessage already added!")
         else:
-            await update.message.reply_text(f"Error adding quote:\n{e}")
+            await update.message.reply_text(f"⚠️ Error adding quote ⚠️"
+                                            f"\n{e}")
 
     finally:
         conn.close()
@@ -179,7 +181,6 @@ async def get_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     identifying quotes from the db based on the quotee, text
     in quote or tags.
     """
-    msg = update.message.text.lower()
     chat_id = update.message.chat.id
 
     arglist = _get_message_args(update.message.text).split()
@@ -191,8 +192,8 @@ async def get_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if msg_id:
         await context.bot.forwardMessage(chat_id=chat_id, from_chat_id=chat_id, message_id=msg_id)
     else:
-        await update.message.reply_text("Can't find a quote",
-                        reply_to_message_id=update.message.message_id)
+        await update.message.reply_text("🛑 Can't find a quote 🛑",
+                                        reply_to_message_id=update.message.message_id)
 
 
 async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -214,20 +215,21 @@ async def list_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         """,
                         (user_fullname,)).fetchall()
         if not ret:
-            await update.message.reply_text("You have no quotes saved.")
+            await update.message.reply_text("❌ You have no quotes saved ❌")
             return
 
         text = "\n\n".join([
-            f"{i + 1}:\n"
-            f"Quote: {(t[0] if t[0] else 'VoiceMessage')}\n"
-            f"Tags: {(t[1] if t[1] else 'None')}\n"
-            f"ID: {t[2]}"
+            f"<b>{i + 1}:</b>\n"
+            f"<b>Quote:</b> {(t[0] if t[0] else 'VoiceMessage')}\n"
+            f"<b>Tags:</b> {(t[1] if t[1] else 'None')}\n"
+            f"<b>ID:</b> {t[2]}"
             for i, t in enumerate(ret)
         ])
-        await update.message.reply_text(text)
+        await update.message.reply_text(text,
+                                        parse_mode="HTML")
     except Exception as e:
         logger.exception("Error in list_quotes")
-        await update.message.reply_text("An error occurred while listing your quotes.")
+        await update.message.reply_text("⚠️ Error occurred while listing your quotes ⚠️")
     finally:
         if conn:
             conn.close()
@@ -245,8 +247,10 @@ async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
         args = update.message.text.strip().split()
         if len(args) < 2 or not args[1].isdigit():
             await update.message.reply_text(
-                "How to use: /deletequote [quote ID]\n"
-                "You can get quote ID for your messages by using /listquotes"
+                "<b>How to use:</b>\n"
+                "/deletequote [quote ID]\n"
+                "🔍 <i>You can get quote ID for your messages by using /listquotes</i> 🔍",
+                parse_mode="HTML"
             )
             return
 
@@ -261,15 +265,16 @@ async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn.commit()
 
         if deleted.rowcount > 0:
-            await update.message.reply_text("Quote removed!")
+            await update.message.reply_text("✅ Quote removed ✅")
         else:
             await update.message.reply_text(
-                "Quote was not found with that ID or it's not your quote.\n"
-                "Check ID with /listquotes."
+                "🛑 Quote was not found with that ID or it's not your quote 🛑\n"
+                "<i>Check your quotes' IDs with /listquotes.</i>",
+                parse_mode="HTML"
             )
 
     except Exception as e:
-        await update.message.reply_text(f"Error removing quote:\n"
+        await update.message.reply_text(f"⚠️ Error removing quote ⚠️\n"
                                         f"{e}")
     finally:
         conn.close()

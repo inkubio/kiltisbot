@@ -29,7 +29,7 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if reply:  # Two branches: either adding via a reply, or adding as a single message
         if not reply.text:  # Using command and not replying to a text message
-            await update.message.reply_text("Please only add text-based jokes.",
+            await update.message.reply_text("💡 Please only add text-based jokes 💡",
                             reply_to_message_id=message.message_id)
             return
         joke = reply.text
@@ -39,7 +39,7 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         joke = _get_message_args(message.text)
         tags = ""
         if not joke:
-            await update.message.reply_text("Please use /addjoke by replying to a message.\n"
+            await update.message.reply_text("💡 Please use /addjoke by replying to a message 💡\n"
                                             "Or or by using a joke as an argument after it.\n"
                                             "<b>Example:</b> /addjoke haha funny :D",
                                             reply_to_message_id=message.message_id,
@@ -53,9 +53,10 @@ async def add_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         c.execute("INSERT INTO jokes VALUES (?, ?, ?)",
                   (joke, tags, date_added))
         conn.commit()
-        await update.message.reply_text("Joke added.")
+        await update.message.reply_text("✅ Joke added ✅")
     except Exception as e:
-        await update.message.reply_text("Error adding joke:\n{}".format(e))
+        await update.message.reply_text(f"⚠️ Error adding joke ⚠️"
+                                        f"\n{e}")
     finally:
         conn.close()
 
@@ -120,9 +121,6 @@ async def get_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
     in joke or tags.
     """
     try:
-        msg = update.message.text.lower()
-        chat_id = update.message.chat.id
-
         arglist = _get_message_args(update.message.text).split()
         if arglist:
             joke = _search_joke(arglist)
@@ -132,8 +130,8 @@ async def get_joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if joke:
             await update.message.reply_text(joke)
         else:
-            await update.message.reply_text("No jokes.",
+            await update.message.reply_text("🛑 No jokes 🛑",
                             reply_to_message_id=update.message.message_id)
     except Exception as e:
         logger.error("Error in get_joke: %s", e)
-        await update.message.reply_text("Something went wrong 🤖")
+        await update.message.reply_text("🤖️ Something went wrong 🤖")
