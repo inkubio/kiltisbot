@@ -80,7 +80,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 "/music\n"
                 "What music is currently playing at the guildroom.\n\n"
                 ""
-                "/virpi <argument>\n"
+                "/virpi &lt;argument&gt;\n"
                 "Search for a song from the latest VIRPI based on the name or lyrics.\n"
                 "If no exact match found, the best search results are shown.\n"
                 "To get the exact song try again with a more specific search.\n"
