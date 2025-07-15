@@ -101,7 +101,7 @@ def _search_song(args):
         conn.close()
 
     # Sorting may not be required. Could be easier to send the list as it was found.
-    matches = sorted(results) if results else None
+    matches = sorted(results)
     return matches[:5]  # Give only the top 5 results
 
 

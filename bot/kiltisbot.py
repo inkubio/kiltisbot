@@ -67,79 +67,79 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     Should be get up to date with the functionalities of the bot.
     """
     help_text = ("<u><b>Commands &amp; Instructions:</b></u>\n\n"
-                ""
-                "/help\n"
-                "This message.\n\n"
-                ""
-                "/coffee\n"
-                "Get a picture of the coffee pot at the guildroom.\n\n"
-                ""
-                "/events\n"
-                "Get future guild events.\n\n"
-                ""
-                "/music\n"
-                "What music is currently playing at the guildroom.\n\n"
-                ""
-                "/virpi\n"
-                "Search for a song from the latest VIRPI based on the name or lyrics.\n"
-                "If no exact match found, the best search results are shown.\n"
-                "To get the exact song try again with a more specific search.\n"
-                "<b>Example:</b> /virpi hyvät ystävät\n\n"
-                ""
-                "/plot\n"
-                "Draws a plot from the climate data <i>(last 24h)</i>\n"
-                "<b>CO2:</b> Solid line every <i>200ppm</i> and dashed every <i>100ppm</i>\n"
-                "<b>Temp:</b> Solid line every <i>1°C</i> and dashed every <i>0,5°C</i>\n"
-                "<b>Humid:</b> Solid line every <i>5%</i> and dashed every <i>2,5%</i>\n\n"
-                ""
-                "/numbers\n"
-                "Get most recent climate data from the guildroom "
-                "&amp; estimated people count <i>(same as with /stalk)</i>\n\n"
-                ""
-                "/stalk\n"
-                "Get an estimated latest occupancy of the guildroom. "
-                "Based on the climate data\n"
-                "<i>(Currently a simple linear model based on co2 levels)</i>\n\n"
-                ""
-                "/fact\n"
-                "Get a random useless fact.\n\n"
-                ""
-                "/trivia\n"
-                "Get a random trivia quiz.\n\n"
-                ""
-                "/addquote\n"
-                "Add a quote to the bot by replying to a message.\n"
-                "<b>Example:</b> /addquote exampletag1\n"
-                "<i>(Tags are necessary only with voice messages, but also help finding other quotes later)</i>\n"
-                "<b>❌⚠️IMPORTANT!⚠️❌</b>\n"
-                "<b>Quotes are chat specific!</b>\n\n"
-                ""
-                "/quote\n"
-                "Get a quote from the bot. Random if no added a search argument like "
-                "the quotee, text in quote or tags.\n"
-                "<b>Example:</b> /quote funny\n\n"
-                ""
-                "/listquotes\n"
-                "Get a list of your own quotes from the bot\n"
-                "<i><u>(Works only in private chat with the bot)</u></i>\n\n"
-                ""
-                "/deletequote\n"
-                "Delete your quote from the bot by adding the quote ID.\n"
-                "Get the ID with /listquotes.\n"
-                "<b>Example:</b> /deletequote 1234\n"
-                "<i><u>(Works only in private chat with the bot and you can delete only your own quotes)</u></i>\n\n"
-                ""
-                "/addjoke\n"
-                "Add a joke to the bot by replying to one or by writing one as an "
-                "argument after the command.\n"
-                "<b>❌⚠️IMPORTANT!⚠️❌</b>"
-                "<b>Jokes are global and NOT chat specific!</b>\n\n"
-                ""
-                "/joke\n"
-                "Get a joke from the bot based on search arguments. Otherwise random.\n\n"
-                ""
-                "If there are any problems with the bot or suggestions for future functions,"
-                "contact spagutmk or @apeoskari/@oskarikalervo")
+                 ""
+                 "/help\n"
+                 "This message.\n\n"
+                 ""
+                 "/coffee\n"
+                 "Get a picture of the coffee pot at the guildroom.\n\n"
+                 ""
+                 "/events\n"
+                 "Get future guild events.\n\n"
+                 ""
+                 "/music\n"
+                 "What music is currently playing at the guildroom.\n\n"
+                 ""
+                 "/virpi\n"
+                 "Search for a song from the latest VIRPI based on the name or lyrics.\n"
+                 "If no exact match found, the best search results are shown.\n"
+                 "To get the exact song try again with a more specific search.\n"
+                 "<b>Example:</b> /virpi hyvät ystävät\n\n"
+                 ""
+                 "/plot\n"
+                 "Draws a plot from the climate data <i>(last 24h)</i>\n"
+                 "<b>CO2:</b> Solid line every <i>200ppm</i> and dashed every <i>100ppm</i>\n"
+                 "<b>Temp:</b> Solid line every <i>1°C</i> and dashed every <i>0,5°C</i>\n"
+                 "<b>Humid:</b> Solid line every <i>5%</i> and dashed every <i>2,5%</i>\n\n"
+                 ""
+                 "/numbers\n"
+                 "Get most recent climate data from the guildroom "
+                 "&amp; estimated people count <i>(same as with /stalk)</i>\n\n"
+                 ""
+                 "/stalk\n"
+                 "Get an estimated latest occupancy of the guildroom. "
+                 "Based on the climate data\n"
+                 "<i>(Currently a simple linear model based on co2 levels)</i>\n\n"
+                 ""
+                 "/fact\n"
+                 "Get a random useless fact.\n\n"
+                 ""
+                 "/trivia\n"
+                 "Get a random trivia quiz.\n\n"
+                 ""
+                 "/addquote\n"
+                 "Add a quote to the bot by replying to a message.\n"
+                 "<b>Example:</b> /addquote exampletag1\n"
+                 "<i>(Tags are necessary only with voice messages, but also help finding other quotes later)</i>\n"
+                 "<b>❌⚠️IMPORTANT!⚠️❌</b>\n"
+                 "<b>Quotes are chat specific!</b>\n\n"
+                 ""
+                 "/quote\n"
+                 "Get a quote from the bot. Random if no added a search argument like "
+                 "the quotee, text in quote or tags.\n"
+                 "<b>Example:</b> /quote funny\n\n"
+                 ""
+                 "/listquotes\n"
+                 "Get a list of your own quotes from the bot\n"
+                 "<i><u>(Works only in private chat with the bot)</u></i>\n\n"
+                 ""
+                 "/deletequote\n"
+                 "Delete your quote from the bot by adding the quote ID.\n"
+                 "Get the ID with /listquotes.\n"
+                 "<b>Example:</b> /deletequote 1234\n"
+                 "<i><u>(Works only in private chat with the bot and you can delete only your own quotes)</u></i>\n\n"
+                 ""
+                 "/addjoke\n"
+                 "Add a joke to the bot by replying to one or by writing one as an "
+                 "argument after the command.\n"
+                 "<b>❌⚠️IMPORTANT!⚠️❌</b>\n"
+                 "<b>Jokes are global and NOT chat specific!</b>\n\n"
+                 ""
+                 "/joke\n"
+                 "Get a joke from the bot based on search arguments. Otherwise random.\n\n"
+                 ""
+                 "If there are any problems with the bot or suggestions for future functions, "
+                 "contact spagutmk or @apeoskari/@oskarikalervo")
     try:
         await update.message.reply_text(help_text, parse_mode="HTML")
     except Exception as e:
@@ -201,7 +201,7 @@ async def fun_fact(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         fact = data.get("text", "🛑 Couldn't find a fact right now 🛑")
     except Exception as e:
         fact = f"Error fetching fact: {e}"
-    
+
     await update.message.reply_text(fact)
 
 
@@ -250,7 +250,7 @@ def format_event(event):
             time_str = f"{day_label} - {end_dt.strftime('%a, %b %d')} (all day)"
 
     summary = event.get('summary', 'No title')
-    
+
     location = event.get('location', '')
     location_text = ""
     if location:
@@ -305,7 +305,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 def start_bot():
-
     # Create databases if they don't already exist
     if not os.path.isfile(quotedb):
         _create_db(quotedb, init_quote_db)
@@ -336,7 +335,7 @@ def start_bot():
     application.add_handler(CommandHandler("addjoke", add_joke))
     application.add_handler(CommandHandler("joke", get_joke))
     application.add_handler(CommandHandler("virpi", get_song))
-    application.add_handler(CommandHandler("addsong", add_song))        # Hidden from other users
+    application.add_handler(CommandHandler("addsong", add_song))  # Hidden from other users
     application.add_handler(CommandHandler("deletesong", delete_song))  # Hidden from other users
 
     # For debugging
@@ -358,9 +357,9 @@ def main() -> None:
     bot_process = Process(target=start_bot)
     bot_process.start()
     print(f"Bot process started with PID {bot_process.pid}")
-    
+
     run_web_app()
-    
+
     bot_process.join()  # Odottaa botin loppumista (Ctrl-C)
 
 
