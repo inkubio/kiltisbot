@@ -255,7 +255,9 @@ async def delete_quote(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         target_id = int(args[1])
-        user = update.message.chat.first_name.lower() + " " + update.message.chat.last_name.lower()
+        sfname = update.message.chat.first_name.lower() or ""
+        slname = update.message.chat.last_name.lower() or ""
+        user = f"{sfname} {slname}".strip().lower()
 
         deleted = c.execute("""
             DELETE FROM quotes

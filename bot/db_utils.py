@@ -12,7 +12,7 @@ def _init_db(path):
 
 #  Databaseinformation for creating them
 quotedb = "quote.db"
-init_quote_db = "CREATE TABLE IF NOT EXISTS quotes (quote_text TEXT, tags TEXT, message_id INT, chat_id INT, said_by TEXT, added_by TEXT, said_date TEXT, added_date TEXT)"
+init_quote_db = "CREATE TABLE IF NOT EXISTS quotes (quote_text TEXT, tags TEXT, message_id INT, chat_id INT, said_by TEXT, added_by TEXT, said_date TEXT, added_date TEXT, UNIQUE(message_id))"
 jokedb = "joke.db"
 init_joke_db = "CREATE TABLE IF NOT EXISTS jokes (joke_text TEXT, tags TEXT, date_added INT)"
 climatedb = "climate.db"
