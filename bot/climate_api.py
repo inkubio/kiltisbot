@@ -181,12 +181,15 @@ async def upload_sensor(request):
     print(f"Sensor data received: Temp={temp}, Humidity={humidity}, CO2={co2}")
     return web.json_response({"status": "Sensor data received"})
 
+async def index(request):
+    return web.FileResponse('./index.html')
 
 def create_web_app():
     app = web.Application()
 
     # 1. Rekisteröidään reitit
     app.add_routes([
+        web.get('/', index),
         web.post('/upload_sensor', upload_sensor), # Raspberry
         web.get('/ilmanlaatu', get_climate_data)   # Julkinen API
     ])
