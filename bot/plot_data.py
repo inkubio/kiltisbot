@@ -91,15 +91,15 @@ def plotting():
     # Format the individual subplots and their axis.
 
     ax = axs[0]
-    ax.plot(x=df.time, y=df.co2, color='green', linewidth=0.8)
+    ax.plot(df.time, df.co2, color='green', linewidth=0.8)
     ax.set_ylabel('CO2 (ppm)')
 
     ax = axs[1]
-    ax.plot(x=df.time, y=df.temperature, color='red', linewidth=0.8)
+    ax.plot(df.time, df.temperature, color='red', linewidth=0.8)
     ax.set_ylabel('Temp (°C)')
 
     ax = axs[2]
-    ax.plot(x=df.time, y=df.humidity, color='blue', linewidth=0.8)
+    ax.plot(df.time, df.humidity, color='blue', linewidth=0.8)
     ax.set_ylabel('Humidity (RH%)')
 
     os.makedirs('plots', exist_ok=True)
