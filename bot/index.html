@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="https://images.squarespace-cdn.com/content/v1/655e3e9adf998a39f473be26/ec4d25b5-368a-4354-85ab-a6f84f19aedc/favicon.ico?format=100w">
+    <title>Inkubio API Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Inkubio-tyyliset värit */
+            --primary-color: #673e0e; 
+            --primary-dark: #008542;
+            --text-color: #333333;
+            --bg-color: #feffe9;
+            --code-bg: #1e1e1e;
+            --code-text: #d4d4d4;
+            --accent-blue: #007acc; /* GET-metodin väri */
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* --- Header --- */
+        header {
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 3.0rem;
+            color: var(--primary-dark);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+
+        /* --- Main Content --- */
+        main {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .intro {
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            color: #555;
+        }
+
+        /* --- API Card --- */
+        .endpoint-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid #eee;
+            margin-bottom: 40px;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background-color: #fff;
+        }
+
+        .method-badge {
+            background-color: var(--accent-blue);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-right: 10px;
+            font-family: 'Source Code Pro', monospace;
+        }
+
+        .url {
+            font-family: 'Source Code Pro', monospace;
+            font-size: 1.1rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        /* --- Parameters Table --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th {
+            text-align: left;
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-bottom: 2px solid #ddd;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.95rem;
+        }
+
+        .param-name {
+            font-family: 'Source Code Pro', monospace;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .param-type {
+            color: #666;
+            font-size: 0.85rem;
+            background: #eee;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .required {
+            color: #e74c3c;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .optional {
+            color: #27ae60;
+            font-size: 0.8rem;
+        }
+
+        /* --- Code Blocks --- */
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Source Code Pro', monospace;
+            font-size: 0.9rem;
+        }
+
+        .json-key { color: #9cdcfe; }
+        .json-string { color: #ce9178; }
+        .json-number { color: #b5cea8; }
+
+        /* --- Footer --- */
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+            margin-top: 60px;
+        }
+        
+        footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="https://inkubio.fi" class="logo">
+            Inkubio API
+        </a>
+    </header>
+
+    <main>
+        <h1>Inkubio Climate API</h1>
+        <p class="intro">
+            Tämä rajapinta tarjoaa reaaliaikaista ja historiallista ilmanlaatutietoa Inkubion kiltahuoneelta. 
+            Data sisältää lämpötilan, ilmankosteuden ja hiilidioksidipitoisuuden (CO2).
+        </p>
+
+        <div class="endpoint-card">
+            <div class="card-header">
+                <span class="method-badge">GET</span>
+                <span class="url">/ilmanlaatu</span>
+            </div>
+            
+            <div class="card-body">
+                <h3>Kuvaus</h3>
+                <p>Hakee ilmanlaatumittauksia valitulta aikaväliltä. Jos parametreja ei anneta, palauttaa oletuksena viimeisimmän 24 tunnin mittaukset. Data pisteitä on minuutin välein.</p>
+
+                <h3>Parametrit</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nimi</th>
+                            <th>Tyyppi</th>
+                            <th>Kuvaus</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="param-name">start</span></td>
+                            <td><span class="param-type">string</span> <span class="required">(Suositeltu)</span></td>
+                            <td>Haun alkuaika ISO 8601 -muodossa (esim. <code>2026-01-18T08:00</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><span class="param-name">end</span></td>
+                            <td><span class="param-type">string</span> <span class="optional">(Valinnainen)</span></td>
+                            <td>Haun loppuaika. Jos jätetään tyhjäksi, haetaan nykyhetkeen asti.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Esimerkkipyyntö</h3>
+                <pre>curl "https://api.inkubio.fi/ilmanlaatu?start=2026-01-18T10:00&end=2026-01-18T10:02"</pre>
+
+                <h3>Esimerkkivastaus</h3>
+                <pre><code>[
+  {
+    <span class="json-key">"timestamp"</span>: <span class="json-string">"2026-01-18T10:00:22+02:00"</span>,
+    <span class="json-key">"temperature"</span>: <span class="json-number">22.07</span>,
+    <span class="json-key">"humidity"</span>: <span class="json-number">25.06</span>,
+    <span class="json-key">"co2"</span>: <span class="json-number">687</span>
+  },
+  {
+    <span class="json-key">"timestamp"</span>: <span class="json-string">"2026-01-18T10:01:22+02:00"</span>,
+    <span class="json-key">"temperature"</span>: <span class="json-number">22.07</span>,
+    <span class="json-key">"humidity"</span>: <span class="json-number">25.12</span>,
+    <span class="json-key">"co2"</span>: <span class="json-number">687</span>
+  }
+]</code></pre>
+            </div>
+        </div>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Inkubio ry. <br>
+        <a href="https://inkubio.fi">Palaa etusivulle</a></p>
+    </footer>
+
+</body>
+</html>
