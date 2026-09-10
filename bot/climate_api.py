@@ -2,6 +2,7 @@ import config  # Optionally define the API_KEY here
 from db_utils import save_climate_data  # Or make your own function to save to a database
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from aiohttp import web
 import aiosqlite
 import pathlib
 import aiohttp_cors
