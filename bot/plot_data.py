@@ -70,6 +70,8 @@ def plotting():
         sharex=True,
     )
 
+    fig.tight_layout()
+
     fig.suptitle(
         f"Kiltis Climate • Last {title_text}\nUpdated {t_end_local:%d.%m.%Y at %H:%M:%S}",
         fontsize=20
