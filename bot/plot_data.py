@@ -70,8 +70,6 @@ def plotting():
         sharex=True,
     )
 
-    fig.tight_layout()
-
     fig.suptitle(
         f"Kiltis Climate • Last {title_text}\nUpdated {t_end_local:%d.%m.%Y at %H:%M:%S}",
         fontsize=20
@@ -103,6 +101,7 @@ def plotting():
     ax = axs[2]
     ax.plot(df.time, df.humidity, color='blue', linewidth=0.8)
     ax.set_ylabel('Humidity (RH%)')
+    fig.update_layout(margin=dict(t=150))
 
     os.makedirs('plots', exist_ok=True)
     # Save the figure as a png to a location
